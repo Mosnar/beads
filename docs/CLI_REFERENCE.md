@@ -177,7 +177,9 @@ Reference for bd Latest. Generated from `bd help --all`.
 - [bd gc](#bd-gc) — Garbage collect: decay old issues, compact Dolt commits, run Dolt GC
 - [bd migrate](#bd-migrate) — Database migration commands
   - [bd migrate from-proxied-server-to-server](#bd-migrate-from-proxied-server-to-server) — [EXPERIMENTAL] Switch a proxied-server repo to server mode
+  - [bd migrate from-proxied-server-to-shared-server](#bd-migrate-from-proxied-server-to-shared-server) — [EXPERIMENTAL] Switch a proxied-server repo back to shared-server mode
   - [bd migrate from-server-to-proxied-server](#bd-migrate-from-server-to-proxied-server) — [EXPERIMENTAL] Switch a server-mode repo to proxied-server mode
+  - [bd migrate from-shared-server-to-proxied-server](#bd-migrate-from-shared-server-to-proxied-server) — [EXPERIMENTAL] Switch a shared-server repo to proxied-server mode
   - [bd migrate hooks](#bd-migrate-hooks) — Plan or apply git hook migration to marker-managed format
   - [bd migrate issues](#bd-migrate-issues) — Move issues between repositories
   - [bd migrate schema](#bd-migrate-schema) — Apply pending schema migrations (idempotent)
@@ -4180,8 +4182,10 @@ Subcommands:
   issues                           Move issues between repositories
   schema                           Apply pending schema migrations (idempotent)
   sync                             Set up sync.branch workflow for multi-clone setups
-  from-server-to-proxied-server    [EXPERIMENTAL] Switch server mode to proxied-server mode
-  from-proxied-server-to-server    [EXPERIMENTAL] Switch proxied-server mode to server mode
+  from-server-to-proxied-server           [EXPERIMENTAL] Switch server mode to proxied-server mode
+  from-proxied-server-to-server           [EXPERIMENTAL] Switch proxied-server mode to server mode
+  from-shared-server-to-proxied-server    [EXPERIMENTAL] Switch shared-server mode to proxied-server mode
+  from-proxied-server-to-shared-server    [EXPERIMENTAL] Switch proxied-server mode to shared-server mode
 
 On a remote-backed database with pending schema migrations bd refuses to
 migrate in place (#4259): migrating two clones independently forks the schema
@@ -4228,6 +4232,26 @@ bd migrate from-proxied-server-to-server [flags]
       --dry-run   Show what would be done without making changes
 ```
 
+#### bd migrate from-proxied-server-to-shared-server
+
+Switch a repo from proxied-server mode back to shared-server mode.
+
+Only applies to a proxied-server repo rooted at the shared dolt directory
+(~/.beads/shared-server/dolt) — the reverse of from-shared-server-to-proxied-server.
+This rewrites .beads/metadata.json (dolt_mode), re-enables dolt.shared-server, and
+removes the proxied-server sidecar; no Dolt data is copied or moved. Stop the
+running proxy first with 'bd dolt stop'.
+
+```
+bd migrate from-proxied-server-to-shared-server [flags]
+```
+
+**Flags:**
+
+```
+      --dry-run   Show what would be done without making changes
+```
+
 #### bd migrate from-server-to-proxied-server
 
 Switch a repo from server mode (bd init --server) to proxied-server mode.
@@ -4242,6 +4266,27 @@ to clones on the next push.
 
 ```
 bd migrate from-server-to-proxied-server [flags]
+```
+
+**Flags:**
+
+```
+      --dry-run                 Show what would be done without making changes
+      --idle-timeout duration   Proxy idle timeout; omit for the 30s default, 0 for indefinite uptime
+```
+
+#### bd migrate from-shared-server-to-proxied-server
+
+Switch a repo from shared-server mode to proxied-server mode.
+
+The proxied server is rooted at the shared dolt directory
+(~/.beads/shared-server/dolt), so no Dolt data is copied or moved; this rewrites
+.beads/metadata.json (dolt_mode), turns off dolt.shared-server for this repo, and
+writes the proxied-server sidecar. Stop the running shared server first with
+'bd dolt stop' — note that stops it for every project sharing it.
+
+```
+bd migrate from-shared-server-to-proxied-server [flags]
 ```
 
 **Flags:**
