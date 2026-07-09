@@ -21,6 +21,10 @@ import (
 
 const migrateLockFileName = "migrate.lock"
 
+func migrateModeGate(cmd *cobra.Command) error {
+	return fmt.Errorf("%s is not yet implemented", cmd.CommandPath())
+}
+
 var migrateToProxiedServerCmd = &cobra.Command{
 	Use:           "from-server-to-proxied-server",
 	Short:         "[EXPERIMENTAL] Switch a server-mode repo to proxied-server mode",
@@ -37,6 +41,10 @@ Note: dolt_mode lives in the committed metadata.json, so this change propagates
 to clones on the next push.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, _ []string) error {
+		if err := migrateModeGate(cmd); err != nil {
+			return err
+		}
+
 		evt := metrics.NewCommandEvent("migrate-to-proxied-server")
 		defer func() {
 			if c := metrics.Global(); c != nil {
@@ -73,6 +81,10 @@ Note: dolt_mode lives in the committed metadata.json, so this change propagates
 to clones on the next push.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, _ []string) error {
+		if err := migrateModeGate(cmd); err != nil {
+			return err
+		}
+
 		evt := metrics.NewCommandEvent("migrate-to-server")
 		defer func() {
 			if c := metrics.Global(); c != nil {

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -39,6 +40,14 @@ func serverAssetNames() []string {
 
 func proxiedAssetNames() []string {
 	return []string{"proxy.pid", "proxy.lock", "proxy.log", "proxy-child.pid", "proxy-child.lock", "server.log"}
+}
+
+func TestMigrateModeCommands_Gated(t *testing.T) {
+	for _, cmd := range []*cobra.Command{migrateToProxiedServerCmd, migrateToServerCmd} {
+		err := cmd.RunE(cmd, nil)
+		require.Error(t, err, "%s must be gated", cmd.Name())
+		assert.Contains(t, err.Error(), "is not yet implemented")
+	}
 }
 
 func TestMigrateToProxiedServer_FlipsMode(t *testing.T) {
