@@ -1152,9 +1152,34 @@ func cleanupStateFiles(beadsDir string) error {
 	return errors.Join(errs...)
 }
 
+func StateFilePaths(beadsDir string) []string {
+	return []string{
+		pidPath(beadsDir),
+		portPath(beadsDir),
+		lockPath(beadsDir),
+		logPath(beadsDir),
+		logPath(beadsDir) + ".1",
+		DebugProfileDir(beadsDir),
+	}
+}
+
+func RemoveStateFiles(beadsDir string) []error {
+	var errs []error
+	for _, path := range StateFilePaths(beadsDir) {
+		if err := os.RemoveAll(path); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
+}
+
 // LogPath returns the path to the server log file.
 func LogPath(beadsDir string) string {
 	return logPath(beadsDir)
+}
+
+func LockPath(beadsDir string) string {
+	return lockPath(beadsDir)
 }
 
 // killStaleServersForDir finds and kills orphan dolt sql-server processes for

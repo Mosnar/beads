@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -10,10 +11,15 @@ import (
 	"github.com/steveyegge/beads/internal/beads"
 	"github.com/steveyegge/beads/internal/configfile"
 	"github.com/steveyegge/beads/internal/doltserver"
+	"github.com/steveyegge/beads/internal/lockfile"
 	"github.com/steveyegge/beads/internal/metrics"
 	"github.com/steveyegge/beads/internal/storage/dbproxy/proxy"
+	"github.com/steveyegge/beads/internal/storage/dbproxy/server"
+	"github.com/steveyegge/beads/internal/storage/dbproxy/util"
 	"github.com/steveyegge/beads/internal/ui"
 )
+
+const migrateLockFileName = "migrate.lock"
 
 var migrateToProxiedServerCmd = &cobra.Command{
 	Use:           "from-server-to-proxied-server",
@@ -96,23 +102,56 @@ func resolveMigrateIdleTimeout(cmd *cobra.Command) (time.Duration, error) {
 	return v, nil
 }
 
-func loadMigrateModeConfig() (string, *configfile.Config, error) {
+func migrateModeBeadsDir() (string, error) {
 	beadsDir := beads.FindBeadsDir()
 	if beadsDir == "" {
-		return "", nil, HandleErrorWithHint(activeWorkspaceNotFoundError(), diagHint())
+		return "", HandleErrorWithHint(activeWorkspaceNotFoundError(), diagHint())
 	}
+	return beadsDir, nil
+}
+
+func loadMigrateModeConfig(beadsDir string) (*configfile.Config, error) {
 	cfg, err := configfile.Load(beadsDir)
 	if err != nil {
-		return "", nil, HandleError("failed to load config: %v", err)
+		return nil, HandleError("failed to load config: %v", err)
 	}
 	if cfg == nil {
-		return "", nil, HandleError("no beads database found in %s — run 'bd init' first", beadsDir)
+		return nil, HandleError("no beads database found in %s — run 'bd init' first", beadsDir)
 	}
-	return beadsDir, cfg, nil
+	return cfg, nil
+}
+
+func acquireMigrateLock(beadsDir string) (util.Unlocker, error) {
+	lock, err := util.TryLock(filepath.Join(beadsDir, migrateLockFileName))
+	if err != nil {
+		if lockfile.IsLocked(err) {
+			return nil, HandleErrorWithHint("another bd migrate is in progress on this workspace", "wait for it to finish, then retry")
+		}
+		return nil, HandleError("failed to acquire migration lock: %v", err)
+	}
+	return lock, nil
+}
+
+func migrateLockErr(what string, err error) error {
+	if lockfile.IsLocked(err) {
+		return HandleErrorWithHint(fmt.Sprintf("%s is still running", what), "stop it first: bd dolt stop")
+	}
+	return HandleError("failed to acquire %s lock: %v", what, err)
 }
 
 func runMigrateToProxiedServer(dryRun bool, idleTimeout time.Duration) error {
-	beadsDir, cfg, err := loadMigrateModeConfig()
+	beadsDir, err := migrateModeBeadsDir()
+	if err != nil {
+		return err
+	}
+	if !dryRun {
+		unlock, err := acquireMigrateLock(beadsDir)
+		if err != nil {
+			return err
+		}
+		defer unlock.Unlock()
+	}
+	cfg, err := loadMigrateModeConfig(beadsDir)
 	if err != nil {
 		return err
 	}
@@ -133,6 +172,9 @@ func runMigrateToProxiedServer(dryRun bool, idleTimeout time.Duration) error {
 		fmt.Println("Dry run mode - no changes will be made")
 		fmt.Printf("Would set dolt_mode: %s → %s\n", configfile.DoltModeServer, configfile.DoltModeProxiedServer)
 		fmt.Printf("Would write %s\n", configfile.ProxiedServerClientInfoFileName)
+		for _, p := range doltserver.StateFilePaths(serverDir) {
+			fmt.Printf("Would remove %s\n", p)
+		}
 		return nil
 	}
 
@@ -146,6 +188,8 @@ func runMigrateToProxiedServer(dryRun bool, idleTimeout time.Duration) error {
 		return HandleError("failed to write %s: %v", configfile.ProxiedServerClientInfoFileName, err)
 	}
 
+	warnMigrateRemovalErrors(doltserver.RemoveStateFiles(serverDir))
+
 	commandDidWrite.Store(true)
 	fmt.Printf("%s\n\n", ui.RenderPass("✓ Switched to proxied-server mode"))
 	fmt.Printf("  Data directory unchanged: %s\n", proxiedServerRoot(beadsDir))
@@ -154,7 +198,18 @@ func runMigrateToProxiedServer(dryRun bool, idleTimeout time.Duration) error {
 }
 
 func runMigrateToServer(dryRun bool) error {
-	beadsDir, cfg, err := loadMigrateModeConfig()
+	beadsDir, err := migrateModeBeadsDir()
+	if err != nil {
+		return err
+	}
+	if !dryRun {
+		unlock, err := acquireMigrateLock(beadsDir)
+		if err != nil {
+			return err
+		}
+		defer unlock.Unlock()
+	}
+	cfg, err := loadMigrateModeConfig(beadsDir)
 	if err != nil {
 		return err
 	}
@@ -174,12 +229,41 @@ func runMigrateToServer(dryRun bool) error {
 		return HandleErrorWithHint("proxied-server is still running", "stop it first: bd dolt stop")
 	}
 
+	configLogAssets, err := proxiedConfigLogAssets(beadsDir)
+	if err != nil {
+		return HandleError("%v", err)
+	}
+
 	if dryRun {
 		fmt.Println("Dry run mode - no changes will be made")
 		fmt.Printf("Would set dolt_mode: %s → %s\n", configfile.DoltModeProxiedServer, configfile.DoltModeServer)
 		fmt.Printf("Would remove %s\n", configfile.ProxiedServerClientInfoFileName)
+		for _, p := range proxy.ControlFilePaths(rootDir) {
+			fmt.Printf("Would remove %s\n", p)
+		}
+		for _, p := range configLogAssets {
+			fmt.Printf("Would remove %s\n", p)
+		}
 		return nil
 	}
+
+	proxyLock, err := util.TryLock(filepath.Join(rootDir, proxy.LockFileName))
+	if err != nil {
+		return migrateLockErr("proxy", err)
+	}
+	defer proxyLock.Unlock()
+
+	childLock, err := util.TryLock(filepath.Join(rootDir, server.LockFileName))
+	if err != nil {
+		return migrateLockErr("proxied dolt sql-server", err)
+	}
+	defer childLock.Unlock()
+
+	serverLock, err := util.TryLock(doltserver.LockPath(beadsDir))
+	if err != nil {
+		return migrateLockErr("dolt sql-server", err)
+	}
+	defer serverLock.Unlock()
 
 	if err := doltserver.MarkDoltDirCompatible(rootDir); err != nil {
 		return HandleError("failed to mark dolt directory compatible: %v", err)
@@ -194,9 +278,47 @@ func runMigrateToServer(dryRun bool) error {
 		return HandleError("failed to remove %s: %v", configfile.ProxiedServerClientInfoFileName, err)
 	}
 
+	warnMigrateRemovalErrors(proxy.PurgeControlFiles(rootDir))
+	warnMigrateRemovalErrors(removeMigrateAssets(configLogAssets))
+
 	commandDidWrite.Store(true)
 	fmt.Printf("%s\n\n", ui.RenderPass("✓ Switched to server mode"))
 	fmt.Printf("  Data directory unchanged: %s\n", rootDir)
 	fmt.Println("  The dolt sql-server starts automatically on the next bd command.")
 	return nil
+}
+
+func proxiedConfigLogAssets(beadsDir string) ([]string, error) {
+	var paths []string
+	configPath, isCustomConfig, err := resolveProxiedServerConfigPath(beadsDir)
+	if err != nil {
+		return nil, err
+	}
+	if !isCustomConfig {
+		paths = append(paths, configPath)
+	}
+	logPath, isCustomLog, err := resolveProxiedServerLogPath(beadsDir)
+	if err != nil {
+		return nil, err
+	}
+	if !isCustomLog {
+		paths = append(paths, logPath)
+	}
+	return paths, nil
+}
+
+func removeMigrateAssets(paths []string) []error {
+	var errs []error
+	for _, p := range paths {
+		if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
+			errs = append(errs, err)
+		}
+	}
+	return errs
+}
+
+func warnMigrateRemovalErrors(errs []error) {
+	for _, err := range errs {
+		fmt.Fprintf(os.Stderr, "Warning: could not remove migration asset: %v\n", err)
+	}
 }
