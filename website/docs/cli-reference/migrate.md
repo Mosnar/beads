@@ -15,10 +15,12 @@ Database migration and data transformation commands.
 Without subcommand, checks and updates database metadata to current version.
 
 Subcommands:
-  hooks       Plan git hook migration to marker-managed format
-  issues      Move issues between repositories
-  schema      Apply pending schema migrations (idempotent)
-  sync        Set up sync.branch workflow for multi-clone setups
+  hooks                            Plan git hook migration to marker-managed format
+  issues                           Move issues between repositories
+  schema                           Apply pending schema migrations (idempotent)
+  sync                             Set up sync.branch workflow for multi-clone setups
+  from-server-to-proxied-server    [EXPERIMENTAL] Switch server mode to proxied-server mode
+  from-proxied-server-to-server    [EXPERIMENTAL] Switch proxied-server mode to server mode
 
 On a remote-backed database with pending schema migrations bd refuses to
 migrate in place (#4259): migrating two clones independently forks the schema
@@ -41,6 +43,51 @@ bd migrate [flags]
       --json             Output migration statistics in JSON format
       --update-repo-id   Update repository ID (use after changing git remote)
       --yes              Auto-confirm prompts
+```
+
+### bd migrate from-proxied-server-to-server
+
+Switch a repo from proxied-server mode to server mode (bd init --server).
+
+Both modes root their dolt sql-server at the same .beads/dolt directory, so this
+only rewrites .beads/metadata.json (dolt_mode) and removes the proxied-server
+sidecar — no Dolt data is copied or moved. Stop the running proxy first with
+'bd dolt stop'.
+
+Note: dolt_mode lives in the committed metadata.json, so this change propagates
+to clones on the next push.
+
+```
+bd migrate from-proxied-server-to-server [flags]
+```
+
+**Flags:**
+
+```
+      --dry-run   Show what would be done without making changes
+```
+
+### bd migrate from-server-to-proxied-server
+
+Switch a repo from server mode (bd init --server) to proxied-server mode.
+
+Both modes root their dolt sql-server at the same .beads/dolt directory, so this
+only rewrites .beads/metadata.json (dolt_mode) and writes the proxied-server
+sidecar — no Dolt data is copied or moved. Stop the running server first with
+'bd dolt stop'.
+
+Note: dolt_mode lives in the committed metadata.json, so this change propagates
+to clones on the next push.
+
+```
+bd migrate from-server-to-proxied-server [flags]
+```
+
+**Flags:**
+
+```
+      --dry-run                 Show what would be done without making changes
+      --idle-timeout duration   Proxy idle timeout; omit for the 30s default, 0 for indefinite uptime
 ```
 
 ### bd migrate hooks

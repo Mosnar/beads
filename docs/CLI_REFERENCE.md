@@ -176,6 +176,8 @@ Reference for bd Latest. Generated from `bd help --all`.
 - [bd flatten](#bd-flatten) — Squash all Dolt history into a single commit
 - [bd gc](#bd-gc) — Garbage collect: decay old issues, compact Dolt commits, run Dolt GC
 - [bd migrate](#bd-migrate) — Database migration commands
+  - [bd migrate from-proxied-server-to-server](#bd-migrate-from-proxied-server-to-server) — [EXPERIMENTAL] Switch a proxied-server repo to server mode
+  - [bd migrate from-server-to-proxied-server](#bd-migrate-from-server-to-proxied-server) — [EXPERIMENTAL] Switch a server-mode repo to proxied-server mode
   - [bd migrate hooks](#bd-migrate-hooks) — Plan or apply git hook migration to marker-managed format
   - [bd migrate issues](#bd-migrate-issues) — Move issues between repositories
   - [bd migrate schema](#bd-migrate-schema) — Apply pending schema migrations (idempotent)
@@ -3539,7 +3541,7 @@ bd init [flags]
       --init-if-missing                                If the workspace is already initialized, skip init and exit 0 instead of failing (idempotent init for scaffolds)
       --non-interactive                                Skip all interactive prompts (auto-detected in CI or non-TTY environments)
   -p, --prefix string                                  Issue prefix (default: current directory name)
-      --proxied-server                                 [EXPERIMENTAL] Use a per-workspace proxied dolt sql-server (proxy + child dolt) rooted at .beads/proxieddb
+      --proxied-server                                 [EXPERIMENTAL] Use a per-workspace proxied dolt sql-server (proxy + child dolt) rooted at .beads/dolt
       --proxied-server-config-path string              [EXPERIMENTAL] Absolute path to an existing dolt sql-server YAML config (proxied-server mode only). When set, bd uses this file instead of auto-generating one. Relative paths are rejected.
       --proxied-server-external-host string            [EXPERIMENTAL] Hostname or IP of an externally-managed dolt sql-server the proxy should front (proxied-server mode only). Mutually exclusive with --proxied-server-external-socket-path.
       --proxied-server-external-keep-alive duration    [EXPERIMENTAL] TCP keepalive period for the proxy→external connection. Zero uses the package default (30s).
@@ -3550,9 +3552,9 @@ bd init [flags]
       --proxied-server-external-tls-key-path string    [EXPERIMENTAL] Absolute path to the client TLS private key (for mTLS to the externally-managed dolt sql-server). Must be paired with --proxied-server-external-tls-cert-path. Relative paths are rejected.
       --proxied-server-external-user string            [EXPERIMENTAL] MySQL user for the externally-managed dolt sql-server (proxied-server mode only). Defaults to "root" when empty. Password is read at runtime from $BEADS_PROXIED_SERVER_EXTERNAL_PASSWORD and is never persisted to disk.
       --proxied-server-idle-timeout duration           [EXPERIMENTAL] Idle duration after which the proxy shuts down its loopback listener and backend (proxied-server mode only). Omit for the built-in default (30s); 0 keeps the proxy and backend alive indefinitely; a positive value sets the window.
-      --proxied-server-log-path string                 [EXPERIMENTAL] Absolute path to the proxied dolt sql-server log file (proxied-server mode only). Default: <beadsDir>/proxieddb/server.log. Relative paths are rejected.
+      --proxied-server-log-path string                 [EXPERIMENTAL] Absolute path to the proxied dolt sql-server log file (proxied-server mode only). Default: <beadsDir>/dolt/server.log. Relative paths are rejected.
       --proxied-server-port int                        [EXPERIMENTAL] Fixed TCP port for the proxy's loopback listener (proxied-server mode only). Default 0 = an OS-assigned free port. Startup fails if the port is already in use.
-      --proxied-server-root-path string                [EXPERIMENTAL] Absolute directory holding the proxied dolt sql-server's lockfiles, pidfiles, and child .dolt repository (proxied-server mode only). Default: <beadsDir>/proxieddb. May not exist yet — bd will create it. Relative paths are rejected.
+      --proxied-server-root-path string                [EXPERIMENTAL] Absolute directory holding the proxied dolt sql-server's lockfiles, pidfiles, and child .dolt repository (proxied-server mode only). Default: <beadsDir>/dolt. May not exist yet — bd will create it. Relative paths are rejected.
   -q, --quiet                                          Suppress output (quiet mode)
       --reinit-local                                   Re-initialize local .beads/ over existing local data. Does NOT authorize remote divergence; see --discard-remote.
       --remote string                                  Dolt remote URL to clone from and persist as sync.remote
@@ -4174,10 +4176,12 @@ Database migration and data transformation commands.
 Without subcommand, checks and updates database metadata to current version.
 
 Subcommands:
-  hooks       Plan git hook migration to marker-managed format
-  issues      Move issues between repositories
-  schema      Apply pending schema migrations (idempotent)
-  sync        Set up sync.branch workflow for multi-clone setups
+  hooks                            Plan git hook migration to marker-managed format
+  issues                           Move issues between repositories
+  schema                           Apply pending schema migrations (idempotent)
+  sync                             Set up sync.branch workflow for multi-clone setups
+  from-server-to-proxied-server    [EXPERIMENTAL] Switch server mode to proxied-server mode
+  from-proxied-server-to-server    [EXPERIMENTAL] Switch proxied-server mode to server mode
 
 On a remote-backed database with pending schema migrations bd refuses to
 migrate in place (#4259): migrating two clones independently forks the schema
@@ -4200,6 +4204,51 @@ bd migrate [flags]
       --json             Output migration statistics in JSON format
       --update-repo-id   Update repository ID (use after changing git remote)
       --yes              Auto-confirm prompts
+```
+
+#### bd migrate from-proxied-server-to-server
+
+Switch a repo from proxied-server mode to server mode (bd init --server).
+
+Both modes root their dolt sql-server at the same .beads/dolt directory, so this
+only rewrites .beads/metadata.json (dolt_mode) and removes the proxied-server
+sidecar — no Dolt data is copied or moved. Stop the running proxy first with
+'bd dolt stop'.
+
+Note: dolt_mode lives in the committed metadata.json, so this change propagates
+to clones on the next push.
+
+```
+bd migrate from-proxied-server-to-server [flags]
+```
+
+**Flags:**
+
+```
+      --dry-run   Show what would be done without making changes
+```
+
+#### bd migrate from-server-to-proxied-server
+
+Switch a repo from server mode (bd init --server) to proxied-server mode.
+
+Both modes root their dolt sql-server at the same .beads/dolt directory, so this
+only rewrites .beads/metadata.json (dolt_mode) and writes the proxied-server
+sidecar — no Dolt data is copied or moved. Stop the running server first with
+'bd dolt stop'.
+
+Note: dolt_mode lives in the committed metadata.json, so this change propagates
+to clones on the next push.
+
+```
+bd migrate from-server-to-proxied-server [flags]
+```
+
+**Flags:**
+
+```
+      --dry-run                 Show what would be done without making changes
+      --idle-timeout duration   Proxy idle timeout; omit for the 30s default, 0 for indefinite uptime
 ```
 
 #### bd migrate hooks
