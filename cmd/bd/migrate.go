@@ -29,8 +29,10 @@ Subcommands:
   issues                           Move issues between repositories
   schema                           Apply pending schema migrations (idempotent)
   sync                             Set up sync.branch workflow for multi-clone setups
-  from-server-to-proxied-server    [EXPERIMENTAL] Switch server mode to proxied-server mode
-  from-proxied-server-to-server    [EXPERIMENTAL] Switch proxied-server mode to server mode
+  from-server-to-proxied-server           [EXPERIMENTAL] Switch server mode to proxied-server mode
+  from-proxied-server-to-server           [EXPERIMENTAL] Switch proxied-server mode to server mode
+  from-shared-server-to-proxied-server    [EXPERIMENTAL] Switch shared-server mode to proxied-server mode
+  from-proxied-server-to-shared-server    [EXPERIMENTAL] Switch proxied-server mode to shared-server mode
 
 On a remote-backed database with pending schema migrations bd refuses to
 migrate in place (#4259): migrating two clones independently forks the schema
@@ -818,8 +820,15 @@ func init() {
 	migrateToProxiedServerCmd.Flags().Duration("idle-timeout", 0, "Proxy idle timeout; omit for the 30s default, 0 for indefinite uptime")
 	migrateCmd.AddCommand(migrateToProxiedServerCmd)
 
+	migrateSharedToProxiedServerCmd.Flags().Bool("dry-run", false, "Show what would be done without making changes")
+	migrateSharedToProxiedServerCmd.Flags().Duration("idle-timeout", 0, "Proxy idle timeout; omit for the 30s default, 0 for indefinite uptime")
+	migrateCmd.AddCommand(migrateSharedToProxiedServerCmd)
+
 	migrateToServerCmd.Flags().Bool("dry-run", false, "Show what would be done without making changes")
 	migrateCmd.AddCommand(migrateToServerCmd)
+
+	migrateToSharedServerCmd.Flags().Bool("dry-run", false, "Show what would be done without making changes")
+	migrateCmd.AddCommand(migrateToSharedServerCmd)
 
 	rootCmd.AddCommand(migrateCmd)
 }

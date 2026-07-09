@@ -43,7 +43,7 @@ func proxiedAssetNames() []string {
 }
 
 func TestMigrateModeCommands_Gated(t *testing.T) {
-	for _, cmd := range []*cobra.Command{migrateToProxiedServerCmd, migrateToServerCmd} {
+	for _, cmd := range []*cobra.Command{migrateToProxiedServerCmd, migrateToServerCmd, migrateSharedToProxiedServerCmd, migrateToSharedServerCmd} {
 		err := cmd.RunE(cmd, nil)
 		require.Error(t, err, "%s must be gated", cmd.Name())
 		assert.Contains(t, err.Error(), "is not yet implemented")
@@ -58,7 +58,7 @@ func TestMigrateToProxiedServer_FlipsMode(t *testing.T) {
 	}
 	touchFile(t, filepath.Join(beadsDir, "dolt-pprof", "cpu.pprof"))
 
-	require.NoError(t, runMigrateToProxiedServer(false, 0))
+	require.NoError(t, runMigrateToProxiedServer(false, 0, false))
 
 	cfg, err := configfile.Load(beadsDir)
 	require.NoError(t, err)
@@ -78,7 +78,7 @@ func TestMigrateToProxiedServer_FlipsMode(t *testing.T) {
 
 func TestMigrateToProxiedServer_RejectsNonServerMode(t *testing.T) {
 	migrateModeWorkspace(t, configfile.DoltModeEmbedded)
-	err := runMigrateToProxiedServer(false, 0)
+	err := runMigrateToProxiedServer(false, 0, false)
 	require.Error(t, err)
 }
 
@@ -86,7 +86,7 @@ func TestMigrateToProxiedServer_DryRunWritesNothing(t *testing.T) {
 	beadsDir := migrateModeWorkspace(t, configfile.DoltModeServer)
 	touchFile(t, filepath.Join(beadsDir, "dolt-server.log"))
 
-	require.NoError(t, runMigrateToProxiedServer(true, 0))
+	require.NoError(t, runMigrateToProxiedServer(true, 0, false))
 
 	cfg, err := configfile.Load(beadsDir)
 	require.NoError(t, err)
@@ -111,7 +111,7 @@ func TestMigrateToServer_FlipsModeAndRemovesSidecar(t *testing.T) {
 		touchFile(t, filepath.Join(rootDir, n))
 	}
 
-	require.NoError(t, runMigrateToServer(false))
+	require.NoError(t, runMigrateFromProxiedServer(false, false))
 
 	cfg, err := configfile.Load(beadsDir)
 	require.NoError(t, err)
@@ -146,7 +146,7 @@ func TestMigrateToServer_KeepsCustomConfig(t *testing.T) {
 	}))
 	require.NoError(t, os.MkdirAll(filepath.Join(beadsDir, "dolt", ".dolt"), 0o755))
 
-	require.NoError(t, runMigrateToServer(false))
+	require.NoError(t, runMigrateFromProxiedServer(false, false))
 
 	_, err := os.Stat(customConfig)
 	require.NoError(t, err, "user-supplied config path must not be deleted")
@@ -154,7 +154,7 @@ func TestMigrateToServer_KeepsCustomConfig(t *testing.T) {
 
 func TestMigrateToServer_RejectsNonProxiedMode(t *testing.T) {
 	migrateModeWorkspace(t, configfile.DoltModeEmbedded)
-	err := runMigrateToServer(false)
+	err := runMigrateFromProxiedServer(false, false)
 	require.Error(t, err)
 }
 
@@ -164,15 +164,15 @@ func TestMigrateMode_RefusesWhenLockHeld(t *testing.T) {
 	held, err := util.TryLock(filepath.Join(beadsDir, migrateLockFileName))
 	require.NoError(t, err)
 
-	require.Error(t, runMigrateToProxiedServer(false, 0), "must refuse while the lock is held")
-	require.Error(t, runMigrateToServer(false), "must refuse while the lock is held")
+	require.Error(t, runMigrateToProxiedServer(false, 0, false), "must refuse while the lock is held")
+	require.Error(t, runMigrateFromProxiedServer(false, false), "must refuse while the lock is held")
 
 	cfg, err := configfile.Load(beadsDir)
 	require.NoError(t, err)
 	assert.True(t, cfg.IsDoltServerMode(), "mode must be unchanged while blocked")
 
 	held.Unlock()
-	require.NoError(t, runMigrateToProxiedServer(false, 0), "must succeed once the lock is released")
+	require.NoError(t, runMigrateToProxiedServer(false, 0, false), "must succeed once the lock is released")
 }
 
 func TestMigrateToServer_RefusesWhenLifecycleLockHeld(t *testing.T) {
@@ -193,14 +193,14 @@ func TestMigrateToServer_RefusesWhenLifecycleLockHeld(t *testing.T) {
 			held, err := util.TryLock(tc.rel(beadsDir))
 			require.NoError(t, err)
 
-			require.Error(t, runMigrateToServer(false), "must refuse while %s is held", tc.name)
+			require.Error(t, runMigrateFromProxiedServer(false, false), "must refuse while %s is held", tc.name)
 
 			cfg, err := configfile.Load(beadsDir)
 			require.NoError(t, err)
 			assert.True(t, cfg.IsDoltProxiedServerMode(), "mode must be unchanged when blocked")
 
 			held.Unlock()
-			require.NoError(t, runMigrateToServer(false), "must succeed once %s is released", tc.name)
+			require.NoError(t, runMigrateFromProxiedServer(false, false), "must succeed once %s is released", tc.name)
 
 			free, err := util.TryLock(tc.rel(beadsDir))
 			require.NoError(t, err, "%s must be released after a successful migration", tc.name)
@@ -215,12 +215,12 @@ func TestMigrateMode_DryRunIgnoresLock(t *testing.T) {
 	require.NoError(t, err)
 	defer held.Unlock()
 
-	require.NoError(t, runMigrateToProxiedServer(true, 0), "dry-run must not require the lock")
+	require.NoError(t, runMigrateToProxiedServer(true, 0, false), "dry-run must not require the lock")
 }
 
 func TestMigrateMode_ReleasesLockAfterSuccess(t *testing.T) {
 	beadsDir := migrateModeWorkspace(t, configfile.DoltModeServer)
-	require.NoError(t, runMigrateToProxiedServer(false, 0))
+	require.NoError(t, runMigrateToProxiedServer(false, 0, false))
 
 	_, statErr := os.Stat(filepath.Join(beadsDir, migrateLockFileName))
 	assert.True(t, os.IsNotExist(statErr), "migrate.lock must be removed after the command completes")
@@ -231,9 +231,75 @@ func TestMigrateMode_ReleasesLockAfterSuccess(t *testing.T) {
 	_ = os.Remove(filepath.Join(beadsDir, migrateLockFileName))
 }
 
+func TestMigrateSharedToProxiedServer_RootsAtSharedDir(t *testing.T) {
+	sharedDir := t.TempDir()
+	t.Setenv("BEADS_SHARED_SERVER_DIR", sharedDir)
+	t.Setenv("BEADS_DOLT_SHARED_SERVER", "1")
+	beadsDir := migrateModeWorkspace(t, configfile.DoltModeServer)
+	require.NoError(t, os.WriteFile(filepath.Join(beadsDir, "config.yaml"), []byte("dolt:\n  shared-server: true\n"), 0o600))
+
+	require.NoError(t, runMigrateToProxiedServer(false, 0, true))
+
+	cfg, err := configfile.Load(beadsDir)
+	require.NoError(t, err)
+	assert.True(t, cfg.IsDoltProxiedServerMode())
+
+	info, err := configfile.LoadProxiedServerClientInfo(beadsDir)
+	require.NoError(t, err)
+	require.NotNil(t, info)
+	assert.Equal(t, filepath.Join(sharedDir, "dolt"), info.RootPath, "proxy must be rooted at the shared dolt dir")
+
+	body, _ := os.ReadFile(filepath.Join(beadsDir, "config.yaml"))
+	assert.NotContains(t, string(body), "shared-server: true", "dolt.shared-server must be turned off")
+}
+
+func TestMigrateToProxiedServer_RejectsSharedRepo(t *testing.T) {
+	t.Setenv("BEADS_DOLT_SHARED_SERVER", "1")
+	migrateModeWorkspace(t, configfile.DoltModeServer)
+	require.Error(t, runMigrateToProxiedServer(false, 0, false), "non-shared command must reject a shared repo")
+}
+
+func TestMigrateSharedToProxiedServer_RejectsNonShared(t *testing.T) {
+	migrateModeWorkspace(t, configfile.DoltModeServer)
+	require.Error(t, runMigrateToProxiedServer(false, 0, true), "shared command must reject a non-shared repo")
+}
+
+func TestMigrateProxiedToSharedServer_Reverse(t *testing.T) {
+	sharedDir := t.TempDir()
+	t.Setenv("BEADS_SHARED_SERVER_DIR", sharedDir)
+	beadsDir := migrateModeWorkspace(t, configfile.DoltModeProxiedServer)
+	require.NoError(t, os.WriteFile(filepath.Join(beadsDir, "config.yaml"), []byte("dolt:\n  shared-server: false\n"), 0o600))
+	sharedDolt := filepath.Join(sharedDir, "dolt")
+	require.NoError(t, os.MkdirAll(filepath.Join(sharedDolt, ".dolt"), 0o755))
+	require.NoError(t, configfile.SaveProxiedServerClientInfo(beadsDir, &configfile.ProxiedServerClientInfo{RootPath: sharedDolt}))
+
+	require.NoError(t, runMigrateFromProxiedServer(false, true))
+
+	cfg, err := configfile.Load(beadsDir)
+	require.NoError(t, err)
+	assert.True(t, cfg.IsDoltServerMode())
+
+	_, statErr := os.Stat(configfile.ProxiedServerClientInfoPath(beadsDir))
+	assert.True(t, os.IsNotExist(statErr), "sidecar must be removed")
+
+	body, _ := os.ReadFile(filepath.Join(beadsDir, "config.yaml"))
+	assert.Contains(t, string(body), "shared-server: true", "dolt.shared-server must be re-enabled")
+}
+
+func TestMigrateFromProxiedToServer_RejectsSharedRooted(t *testing.T) {
+	sharedDir := t.TempDir()
+	t.Setenv("BEADS_SHARED_SERVER_DIR", sharedDir)
+	beadsDir := migrateModeWorkspace(t, configfile.DoltModeProxiedServer)
+	sharedDolt := filepath.Join(sharedDir, "dolt")
+	require.NoError(t, os.MkdirAll(sharedDolt, 0o755))
+	require.NoError(t, configfile.SaveProxiedServerClientInfo(beadsDir, &configfile.ProxiedServerClientInfo{RootPath: sharedDolt}))
+
+	require.Error(t, runMigrateFromProxiedServer(false, false), "non-shared reverse must reject a shared-rooted proxied repo")
+}
+
 func TestMigrateToProxiedServer_AlreadyProxiedIsNoop(t *testing.T) {
 	beadsDir := migrateModeWorkspace(t, configfile.DoltModeProxiedServer)
-	require.NoError(t, runMigrateToProxiedServer(false, 0))
+	require.NoError(t, runMigrateToProxiedServer(false, 0, false))
 
 	cfg, err := configfile.Load(beadsDir)
 	require.NoError(t, err)

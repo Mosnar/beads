@@ -875,7 +875,7 @@ var rootCmd = &cobra.Command{
 		// silently skipped if "remote" were ever added to noDbCommands.
 		needsStoreDoltGrandchildren := []string{"remote"}
 
-		skipStoreMigrateSubcommands := []string{"from-server-to-proxied-server", "from-proxied-server-to-server"}
+		skipStoreMigrateSubcommands := []string{"from-server-to-proxied-server", "from-proxied-server-to-server", "from-shared-server-to-proxied-server", "from-proxied-server-to-shared-server"}
 
 		// Check both the command name and parent command name for subcommands
 		cmdName := cmd.Name()
