@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	proxiedServerConfigName = "server_config.yaml"
+	proxiedServerConfigName = "config.yaml"
 	proxiedServerLogName    = "server.log"
 )
 
@@ -122,6 +122,9 @@ func ensureProxiedServerConfig(beadsDir string) (string, error) {
 
 	switch _, err := os.Stat(path); {
 	case err == nil:
+		if _, err := servercfg.YamlConfigFromFile(filesys.LocalFS, path); err != nil {
+			return "", fmt.Errorf("ensureProxiedServerConfig: existing config %s: parse: %w", path, err)
+		}
 		return path, nil
 	case !os.IsNotExist(err):
 		return "", fmt.Errorf("ensureProxiedServerConfig: stat %s: %w", path, err)

@@ -31,7 +31,7 @@ func TestEnsureProxiedServerConfig_CreatesAndIsIdempotent(t *testing.T) {
 
 	path1, err := ensureProxiedServerConfig(beadsDir)
 	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(beadsDir, "dolt", "server_config.yaml"), path1)
+	assert.Equal(t, filepath.Join(beadsDir, "dolt", "config.yaml"), path1)
 
 	body1, err := os.ReadFile(path1)
 	require.NoError(t, err)
@@ -54,10 +54,29 @@ func TestEnsureProxiedServerConfig_CreatesAndIsIdempotent(t *testing.T) {
 	assert.Greater(t, loaded.Port(), 0)
 }
 
+func TestEnsureProxiedServerConfig_ReusesExistingConfig(t *testing.T) {
+	beadsDir := t.TempDir()
+	root := filepath.Join(beadsDir, "dolt")
+	require.NoError(t, os.MkdirAll(root, 0o755))
+
+	existing, err := renderProxiedServerConfig(45678)
+	require.NoError(t, err)
+	cfgPath := filepath.Join(root, "config.yaml")
+	require.NoError(t, os.WriteFile(cfgPath, existing, 0o600))
+
+	path, err := ensureProxiedServerConfig(beadsDir)
+	require.NoError(t, err)
+	assert.Equal(t, cfgPath, path)
+
+	got, err := os.ReadFile(cfgPath)
+	require.NoError(t, err)
+	assert.Equal(t, existing, got, "existing config.yaml must be reused unchanged")
+}
+
 func TestProxiedServerPathHelpers(t *testing.T) {
 	bd := "/tmp/some/.beads"
 	assert.Equal(t, "/tmp/some/.beads/dolt", proxiedServerRoot(bd))
-	assert.Equal(t, "/tmp/some/.beads/dolt/server_config.yaml", proxiedServerConfigPath(bd))
+	assert.Equal(t, "/tmp/some/.beads/dolt/config.yaml", proxiedServerConfigPath(bd))
 	assert.Equal(t, "/tmp/some/.beads/dolt/server.log", proxiedServerLogPath(bd))
 }
 
@@ -154,7 +173,7 @@ func writeValidServerYAML(t *testing.T, path string) string {
 
 // TestEnsureProxiedServerConfig_CustomPathExists asserts that when a custom
 // path is configured, ensureProxiedServerConfig returns it unchanged AND does
-// not auto-create the default <beadsDir>/proxieddb/server_config.yaml.
+// not auto-create the default <beadsDir>/proxieddb/config.yaml.
 func TestEnsureProxiedServerConfig_CustomPathExists(t *testing.T) {
 	t.Setenv("BEADS_PROXIED_SERVER_CONFIG", "")
 	bd := t.TempDir()
@@ -631,7 +650,7 @@ func TestValidateProxiedServerRootPath(t *testing.T) {
 // TestResolveProxiedServerConfigPath_FollowsCustomRoot locks down the
 // cascade: with no per-flag override, the config path's default fallback
 // must compute against the resolved root, so --proxied-server-root-path
-// alone moves server_config.yaml. The cascaded default is still NOT marked
+// alone moves config.yaml. The cascaded default is still NOT marked
 // isCustom — bd still owns the YAML's lifecycle, just under a custom root.
 // When the per-flag override IS set, it wins regardless of the root.
 func TestResolveProxiedServerConfigPath_FollowsCustomRoot(t *testing.T) {
@@ -643,7 +662,7 @@ func TestResolveProxiedServerConfigPath_FollowsCustomRoot(t *testing.T) {
 		writeProxiedClientInfo(t, bd, &configfile.ProxiedServerClientInfo{RootPath: customRoot})
 		path, isCustom, err := resolveProxiedServerConfigPath(bd)
 		require.NoError(t, err)
-		assert.Equal(t, filepath.Join(customRoot, "server_config.yaml"), path)
+		assert.Equal(t, filepath.Join(customRoot, "config.yaml"), path)
 		assert.False(t, isCustom, "cascaded default is NOT user-owned")
 	})
 
@@ -654,7 +673,7 @@ func TestResolveProxiedServerConfigPath_FollowsCustomRoot(t *testing.T) {
 		t.Setenv("BEADS_PROXIED_SERVER_ROOT_PATH", envRoot)
 		path, isCustom, err := resolveProxiedServerConfigPath(bd)
 		require.NoError(t, err)
-		assert.Equal(t, filepath.Join(envRoot, "server_config.yaml"), path)
+		assert.Equal(t, filepath.Join(envRoot, "config.yaml"), path)
 		assert.False(t, isCustom)
 	})
 
@@ -678,7 +697,7 @@ func TestResolveProxiedServerConfigPath_FollowsCustomRoot(t *testing.T) {
 		bd := t.TempDir()
 		path, isCustom, err := resolveProxiedServerConfigPath(bd)
 		require.NoError(t, err)
-		assert.Equal(t, filepath.Join(bd, "dolt", "server_config.yaml"), path)
+		assert.Equal(t, filepath.Join(bd, "dolt", "config.yaml"), path)
 		assert.False(t, isCustom)
 	})
 }

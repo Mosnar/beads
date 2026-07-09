@@ -38,7 +38,7 @@ func serverAssetNames() []string {
 }
 
 func proxiedAssetNames() []string {
-	return []string{"proxy.pid", "proxy.lock", "proxy.log", "proxy-child.pid", "proxy-child.lock", "server_config.yaml", "server.log"}
+	return []string{"proxy.pid", "proxy.lock", "proxy.log", "proxy-child.pid", "proxy-child.lock", "server.log"}
 }
 
 func TestMigrateToProxiedServer_FlipsMode(t *testing.T) {
@@ -97,6 +97,7 @@ func TestMigrateToServer_FlipsModeAndRemovesSidecar(t *testing.T) {
 	rootDir := filepath.Join(beadsDir, "dolt")
 	require.NoError(t, os.MkdirAll(filepath.Join(rootDir, ".dolt"), 0o755))
 	require.NoError(t, os.MkdirAll(filepath.Join(rootDir, "myproj", ".dolt"), 0o755))
+	touchFile(t, filepath.Join(rootDir, "config.yaml"))
 	for _, n := range proxiedAssetNames() {
 		touchFile(t, filepath.Join(rootDir, n))
 	}
@@ -122,6 +123,9 @@ func TestMigrateToServer_FlipsModeAndRemovesSidecar(t *testing.T) {
 	require.NoError(t, dotDoltErr, "shared .dolt must be preserved")
 	_, dbErr := os.Stat(filepath.Join(rootDir, "myproj", ".dolt"))
 	require.NoError(t, dbErr, "database subdir must be preserved")
+
+	_, configErr := os.Stat(filepath.Join(rootDir, "config.yaml"))
+	require.NoError(t, configErr, "shared config.yaml must be preserved as the server-mode config")
 }
 
 func TestMigrateToServer_KeepsCustomConfig(t *testing.T) {
@@ -209,9 +213,13 @@ func TestMigrateMode_ReleasesLockAfterSuccess(t *testing.T) {
 	beadsDir := migrateModeWorkspace(t, configfile.DoltModeServer)
 	require.NoError(t, runMigrateToProxiedServer(false, 0))
 
+	_, statErr := os.Stat(filepath.Join(beadsDir, migrateLockFileName))
+	assert.True(t, os.IsNotExist(statErr), "migrate.lock must be removed after the command completes")
+
 	lock, err := util.TryLock(filepath.Join(beadsDir, migrateLockFileName))
 	require.NoError(t, err, "lock must be released after the command completes")
 	lock.Unlock()
+	_ = os.Remove(filepath.Join(beadsDir, migrateLockFileName))
 }
 
 func TestMigrateToProxiedServer_AlreadyProxiedIsNoop(t *testing.T) {

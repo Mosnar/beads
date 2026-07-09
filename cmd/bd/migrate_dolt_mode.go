@@ -121,15 +121,19 @@ func loadMigrateModeConfig(beadsDir string) (*configfile.Config, error) {
 	return cfg, nil
 }
 
-func acquireMigrateLock(beadsDir string) (util.Unlocker, error) {
-	lock, err := util.TryLock(filepath.Join(beadsDir, migrateLockFileName))
+func acquireMigrateLock(beadsDir string) (func(), error) {
+	lockPath := filepath.Join(beadsDir, migrateLockFileName)
+	lock, err := util.TryLock(lockPath)
 	if err != nil {
 		if lockfile.IsLocked(err) {
 			return nil, HandleErrorWithHint("another bd migrate is in progress on this workspace", "wait for it to finish, then retry")
 		}
 		return nil, HandleError("failed to acquire migration lock: %v", err)
 	}
-	return lock, nil
+	return func() {
+		lock.Unlock()
+		_ = os.Remove(lockPath)
+	}, nil
 }
 
 func migrateLockErr(what string, err error) error {
@@ -145,11 +149,11 @@ func runMigrateToProxiedServer(dryRun bool, idleTimeout time.Duration) error {
 		return err
 	}
 	if !dryRun {
-		unlock, err := acquireMigrateLock(beadsDir)
+		releaseMigrateLock, err := acquireMigrateLock(beadsDir)
 		if err != nil {
 			return err
 		}
-		defer unlock.Unlock()
+		defer releaseMigrateLock()
 	}
 	cfg, err := loadMigrateModeConfig(beadsDir)
 	if err != nil {
@@ -203,11 +207,11 @@ func runMigrateToServer(dryRun bool) error {
 		return err
 	}
 	if !dryRun {
-		unlock, err := acquireMigrateLock(beadsDir)
+		releaseMigrateLock, err := acquireMigrateLock(beadsDir)
 		if err != nil {
 			return err
 		}
-		defer unlock.Unlock()
+		defer releaseMigrateLock()
 	}
 	cfg, err := loadMigrateModeConfig(beadsDir)
 	if err != nil {
@@ -229,7 +233,7 @@ func runMigrateToServer(dryRun bool) error {
 		return HandleErrorWithHint("proxied-server is still running", "stop it first: bd dolt stop")
 	}
 
-	configLogAssets, err := proxiedConfigLogAssets(beadsDir)
+	logAssets, err := proxiedLogAssets(beadsDir)
 	if err != nil {
 		return HandleError("%v", err)
 	}
@@ -241,7 +245,7 @@ func runMigrateToServer(dryRun bool) error {
 		for _, p := range proxy.ControlFilePaths(rootDir) {
 			fmt.Printf("Would remove %s\n", p)
 		}
-		for _, p := range configLogAssets {
+		for _, p := range logAssets {
 			fmt.Printf("Would remove %s\n", p)
 		}
 		return nil
@@ -279,7 +283,7 @@ func runMigrateToServer(dryRun bool) error {
 	}
 
 	warnMigrateRemovalErrors(proxy.PurgeControlFiles(rootDir))
-	warnMigrateRemovalErrors(removeMigrateAssets(configLogAssets))
+	warnMigrateRemovalErrors(removeMigrateAssets(logAssets))
 
 	commandDidWrite.Store(true)
 	fmt.Printf("%s\n\n", ui.RenderPass("✓ Switched to server mode"))
@@ -288,23 +292,15 @@ func runMigrateToServer(dryRun bool) error {
 	return nil
 }
 
-func proxiedConfigLogAssets(beadsDir string) ([]string, error) {
-	var paths []string
-	configPath, isCustomConfig, err := resolveProxiedServerConfigPath(beadsDir)
-	if err != nil {
-		return nil, err
-	}
-	if !isCustomConfig {
-		paths = append(paths, configPath)
-	}
+func proxiedLogAssets(beadsDir string) ([]string, error) {
 	logPath, isCustomLog, err := resolveProxiedServerLogPath(beadsDir)
 	if err != nil {
 		return nil, err
 	}
-	if !isCustomLog {
-		paths = append(paths, logPath)
+	if isCustomLog {
+		return nil, nil
 	}
-	return paths, nil
+	return []string{logPath}, nil
 }
 
 func removeMigrateAssets(paths []string) []error {
