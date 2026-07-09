@@ -31,7 +31,7 @@ func TestEnsureProxiedServerConfig_CreatesAndIsIdempotent(t *testing.T) {
 
 	path1, err := ensureProxiedServerConfig(beadsDir)
 	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(beadsDir, "proxieddb", "server_config.yaml"), path1)
+	assert.Equal(t, filepath.Join(beadsDir, "dolt", "server_config.yaml"), path1)
 
 	body1, err := os.ReadFile(path1)
 	require.NoError(t, err)
@@ -56,9 +56,9 @@ func TestEnsureProxiedServerConfig_CreatesAndIsIdempotent(t *testing.T) {
 
 func TestProxiedServerPathHelpers(t *testing.T) {
 	bd := "/tmp/some/.beads"
-	assert.Equal(t, "/tmp/some/.beads/proxieddb", proxiedServerRoot(bd))
-	assert.Equal(t, "/tmp/some/.beads/proxieddb/server_config.yaml", proxiedServerConfigPath(bd))
-	assert.Equal(t, "/tmp/some/.beads/proxieddb/server.log", proxiedServerLogPath(bd))
+	assert.Equal(t, "/tmp/some/.beads/dolt", proxiedServerRoot(bd))
+	assert.Equal(t, "/tmp/some/.beads/dolt/server_config.yaml", proxiedServerConfigPath(bd))
+	assert.Equal(t, "/tmp/some/.beads/dolt/server.log", proxiedServerLogPath(bd))
 }
 
 // TestInitCommandRegistersProxiedServerFlag verifies the --proxied-server flag
@@ -421,13 +421,13 @@ func TestCheckExistingBeadsDataAt_ProxiedServerWithExistingDB(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, os.WriteFile(filepath.Join(beadsDir, "metadata.json"), data, 0o644))
 
-		// Materialize <beadsDir>/proxieddb/ — that alone should be enough to
+		// Materialize <beadsDir>/dolt/ — that alone should be enough to
 		// trip the guard, regardless of what's inside.
-		proxiedRoot := filepath.Join(beadsDir, "proxieddb")
+		proxiedRoot := filepath.Join(beadsDir, "dolt")
 		require.NoError(t, os.MkdirAll(proxiedRoot, 0o755))
 
 		err = checkExistingBeadsDataAt(beadsDir, "myproj")
-		require.Error(t, err, "existing proxieddb directory should block init")
+		require.Error(t, err, "existing proxied-server root directory should block init")
 		assert.Contains(t, err.Error(), "already initialized")
 		assert.Contains(t, err.Error(), proxiedRoot)
 	})
@@ -459,9 +459,9 @@ func TestCheckExistingBeadsDataAt_ProxiedServerWithExistingDB(t *testing.T) {
 
 		// Sanity: the default location should NOT exist — proves the guard
 		// fired off the resolved root, not the default.
-		defaultRoot := filepath.Join(beadsDir, "proxieddb")
+		defaultRoot := filepath.Join(beadsDir, "dolt")
 		_, statErr := os.Stat(defaultRoot)
-		require.True(t, os.IsNotExist(statErr), "default <beadsDir>/proxieddb must not exist for this test to be meaningful")
+		require.True(t, os.IsNotExist(statErr), "default <beadsDir>/dolt must not exist for this test to be meaningful")
 
 		err = checkExistingBeadsDataAt(beadsDir, "myproj")
 		require.Error(t, err, "existing custom root should block init")
@@ -672,13 +672,13 @@ func TestResolveProxiedServerConfigPath_FollowsCustomRoot(t *testing.T) {
 		assert.True(t, isCustom, "explicit override is user-owned")
 	})
 
-	t.Run("no overrides falls back to <beadsDir>/proxieddb (preserves pre-cascade default)", func(t *testing.T) {
+	t.Run("no overrides falls back to <beadsDir>/dolt (preserves pre-cascade default)", func(t *testing.T) {
 		t.Setenv("BEADS_PROXIED_SERVER_CONFIG", "")
 		t.Setenv("BEADS_PROXIED_SERVER_ROOT_PATH", "")
 		bd := t.TempDir()
 		path, isCustom, err := resolveProxiedServerConfigPath(bd)
 		require.NoError(t, err)
-		assert.Equal(t, filepath.Join(bd, "proxieddb", "server_config.yaml"), path)
+		assert.Equal(t, filepath.Join(bd, "dolt", "server_config.yaml"), path)
 		assert.False(t, isCustom)
 	})
 }
@@ -723,13 +723,13 @@ func TestResolveProxiedServerLogPath_FollowsCustomRoot(t *testing.T) {
 		assert.True(t, isCustom)
 	})
 
-	t.Run("no overrides falls back to <beadsDir>/proxieddb (preserves pre-cascade default)", func(t *testing.T) {
+	t.Run("no overrides falls back to <beadsDir>/dolt (preserves pre-cascade default)", func(t *testing.T) {
 		t.Setenv("BEADS_PROXIED_SERVER_LOG", "")
 		t.Setenv("BEADS_PROXIED_SERVER_ROOT_PATH", "")
 		bd := t.TempDir()
 		path, isCustom, err := resolveProxiedServerLogPath(bd)
 		require.NoError(t, err)
-		assert.Equal(t, filepath.Join(bd, "proxieddb", "server.log"), path)
+		assert.Equal(t, filepath.Join(bd, "dolt", "server.log"), path)
 		assert.False(t, isCustom)
 	})
 }

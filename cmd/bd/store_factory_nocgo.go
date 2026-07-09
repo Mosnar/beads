@@ -98,7 +98,7 @@ Three options:
   1. Use the proxied dolt sql-server (no external server, no reinstall):
        bd init --proxied-server
      bd spawns a per-workspace proxy + child dolt sql-server under
-     .beads/proxieddb/ and manages their lifecycle for you.
+     .beads/dolt/ and manages their lifecycle for you.
 
   2. Use external server mode (no reinstall needed):
        bd init --server

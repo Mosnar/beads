@@ -246,7 +246,7 @@ type Config struct {
 
 	// ProxiedServer indicates this config targets a per-workspace proxied
 	// dolt sql-server (a parent proxy + a child dolt sql-server, both rooted
-	// at <BeadsDir>/proxieddb). Mutually exclusive with ServerMode: the
+	// at <BeadsDir>/dolt). Mutually exclusive with ServerMode: the
 	// proxied path owns its own connection details and does not consult
 	// ServerHost/Port/Socket/User. Set by the store factory based on
 	// metadata.json dolt_mode=proxied-server.

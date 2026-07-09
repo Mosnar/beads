@@ -20,6 +20,7 @@ import (
 	"github.com/steveyegge/beads/internal/doltserver"
 	"github.com/steveyegge/beads/internal/storage"
 	"github.com/steveyegge/beads/internal/storage/dberrors"
+	"github.com/steveyegge/beads/internal/storage/dbproxy/proxy"
 	"github.com/steveyegge/beads/internal/storage/doltutil"
 	"github.com/steveyegge/beads/internal/ui"
 	"golang.org/x/term"
@@ -588,6 +589,19 @@ on the next bd command unless auto-start is disabled.`,
 		if beadsDir == "" {
 			return HandleErrorWithHint(activeWorkspaceNotFoundError(), diagHint())
 		}
+
+		if usesProxiedServer() {
+			rootDir, err := resolveProxiedServerRootPath(beadsDir)
+			if err != nil {
+				return HandleError("%v", err)
+			}
+			if err := proxy.Shutdown(rootDir); err != nil {
+				return HandleError("%v", err)
+			}
+			fmt.Println("Dolt server stopped.")
+			return nil
+		}
+
 		serverDir := doltserver.ResolveServerDir(beadsDir)
 		force, _ := cmd.Flags().GetBool("force")
 

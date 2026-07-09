@@ -13,17 +13,17 @@ import (
 
 	"github.com/steveyegge/beads/internal/config"
 	"github.com/steveyegge/beads/internal/configfile"
+	"github.com/steveyegge/beads/internal/doltserver"
 	"github.com/steveyegge/beads/internal/storage/dbproxy/proxy"
 )
 
 const (
-	proxiedServerRootName   = "proxieddb"
 	proxiedServerConfigName = "server_config.yaml"
 	proxiedServerLogName    = "server.log"
 )
 
 func proxiedServerRoot(beadsDir string) string {
-	return filepath.Join(beadsDir, proxiedServerRootName)
+	return doltserver.ResolveDoltDir(beadsDir)
 }
 
 func proxiedServerConfigPath(beadsDir string) string {
