@@ -3,9 +3,9 @@ module github.com/steveyegge/beads
 go 1.26.2
 
 require (
-	charm.land/glamour/v2 v2.0.0
+	charm.land/glamour/v2 v2.0.1
 	charm.land/huh/v2 v2.0.3
-	charm.land/lipgloss/v2 v2.0.3
+	charm.land/lipgloss/v2 v2.0.4
 	github.com/BurntSushi/toml v1.6.0
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/JohannesKaufmann/html-to-markdown/v2 v2.5.2
