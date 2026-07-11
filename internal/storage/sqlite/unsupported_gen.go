@@ -233,4 +233,4 @@ func (unsupportedDoltStorage) RestoreFromSnapshot(_ context.Context, _ string) (
 	return
 }
 
-// NOTE: partial shell (104 methods skipped); the embedding composite must assert storage.DoltStorage itself.
+// NOTE: partial shell (105 methods skipped); the embedding composite must assert storage.DoltStorage itself.

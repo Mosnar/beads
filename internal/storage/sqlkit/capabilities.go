@@ -68,6 +68,17 @@ func (s *Store) UnclaimIssue(ctx context.Context, id string, actor string) error
 	})
 }
 
+// UnclaimIssueIfAssignee releases a claim only while the issue is still assigned
+// to expectedAssignee (compare-and-swap, the inverse of ClaimIssue), in a
+// mutation tx so the change and its is_blocked reprojection commit atomically.
+// Returns storage.ErrAssigneeMismatch, leaving the issue untouched, when the
+// current assignee differs.
+func (s *Store) UnclaimIssueIfAssignee(ctx context.Context, id string, actor string, expectedAssignee string) error {
+	return s.withMutationTx(ctx, func(tx *sql.Tx) error {
+		return issueops.UnclaimIssueIfAssigneeInTx(ctx, tx, id, actor, expectedAssignee)
+	})
+}
+
 // ClaimReadyIssue atomically claims the first ready issue matching filter, or
 // returns (nil, nil) when nothing is ready.
 func (s *Store) ClaimReadyIssue(ctx context.Context, filter types.WorkFilter, actor string) (*types.Issue, error) {

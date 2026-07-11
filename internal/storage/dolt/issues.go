@@ -336,13 +336,32 @@ func (s *DoltStore) ReclaimExpiredLeases(ctx context.Context, olderThan time.Dur
 // Delegates SQL work to issueops.UnclaimIssueInTx; handles Dolt-specific concerns
 // (DOLT_ADD/COMMIT).
 func (s *DoltStore) UnclaimIssue(ctx context.Context, id string, actor string) error {
+	return s.unclaimInTx(ctx, id, func(tx *sql.Tx) error {
+		return issueops.UnclaimIssueInTx(ctx, tx, id, actor)
+	})
+}
+
+// UnclaimIssueIfAssignee releases a claim only while the issue is still assigned
+// to expectedAssignee (compare-and-swap, the inverse of ClaimIssue). Returns
+// storage.ErrAssigneeMismatch, leaving the issue untouched, when the current
+// assignee differs. Delegates SQL work to issueops.UnclaimIssueIfAssigneeInTx;
+// handles Dolt-specific concerns (DOLT_ADD/COMMIT).
+func (s *DoltStore) UnclaimIssueIfAssignee(ctx context.Context, id string, actor string, expectedAssignee string) error {
+	return s.unclaimInTx(ctx, id, func(tx *sql.Tx) error {
+		return issueops.UnclaimIssueIfAssigneeInTx(ctx, tx, id, actor, expectedAssignee)
+	})
+}
+
+// unclaimInTx runs an issueops unclaim variant in a transaction and layers the
+// Dolt versioning (DOLT_ADD/COMMIT) on top.
+func (s *DoltStore) unclaimInTx(ctx context.Context, id string, unclaim func(tx *sql.Tx) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	if err := issueops.UnclaimIssueInTx(ctx, tx, id, actor); err != nil {
+	if err := unclaim(tx); err != nil {
 		return err
 	}
 

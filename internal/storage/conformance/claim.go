@@ -265,6 +265,67 @@ func testReclaimExpiredLease(t *testing.T, f Factory) {
 	}
 }
 
+// testUnclaimIfAssigneeMatch: a conditional release with the correct expected
+// assignee clears the claim exactly once (assignee empty, status open). A repeat
+// of the same conditional release finds the claim already gone and fails with
+// storage.ErrAssigneeMismatch instead of silently succeeding — the "exactly
+// once" property a release-if-current caller (e.g. a supervisor returning a
+// dead worker's bead) depends on.
+func testUnclaimIfAssigneeMatch(t *testing.T, f Factory) {
+	s := f(t)
+	must(t, s.CreateIssue(ctx(), withDefaults(&types.Issue{ID: "ur-1", Title: "T"}), "a"))
+	must(t, s.ClaimIssue(ctx(), "ur-1", "worker1"))
+
+	must(t, s.UnclaimIssueIfAssignee(ctx(), "ur-1", "releaser", "worker1"))
+	got, err := s.GetIssue(ctx(), "ur-1")
+	must(t, err)
+	if got.Assignee != "" {
+		t.Errorf("after conditional release: assignee = %q, want empty", got.Assignee)
+	}
+	if got.Status != types.StatusOpen {
+		t.Errorf("after conditional release: status = %q, want open", got.Status)
+	}
+
+	err = s.UnclaimIssueIfAssignee(ctx(), "ur-1", "releaser", "worker1")
+	if !errors.Is(err, storage.ErrAssigneeMismatch) {
+		t.Errorf("repeat conditional release: err = %v, want ErrAssigneeMismatch", err)
+	}
+}
+
+// testUnclaimIfAssigneeStale: a conditional release whose expected assignee is
+// stale (someone else holds the claim) is a loud no-op: it returns
+// storage.ErrAssigneeMismatch naming the current holder, leaves the claim
+// untouched, and records no "unclaimed" event. This is the CAS that makes
+// release-if-current safe across processes — a stale releaser can never clobber
+// another worker's live claim.
+func testUnclaimIfAssigneeStale(t *testing.T, f Factory) {
+	s := f(t)
+	must(t, s.CreateIssue(ctx(), withDefaults(&types.Issue{ID: "ur-2", Title: "T"}), "a"))
+	must(t, s.ClaimIssue(ctx(), "ur-2", "worker2"))
+
+	err := s.UnclaimIssueIfAssignee(ctx(), "ur-2", "releaser", "worker1")
+	if !errors.Is(err, storage.ErrAssigneeMismatch) {
+		t.Errorf("stale conditional release: err = %v, want ErrAssigneeMismatch", err)
+	}
+
+	got, err := s.GetIssue(ctx(), "ur-2")
+	must(t, err)
+	if got.Assignee != "worker2" {
+		t.Errorf("stale release clobbered claim: assignee = %q, want worker2", got.Assignee)
+	}
+	if got.Status != types.StatusInProgress {
+		t.Errorf("stale release changed status to %q, want in_progress", got.Status)
+	}
+
+	events, err := s.GetEvents(ctx(), "ur-2", 0)
+	must(t, err)
+	for _, e := range events {
+		if e.EventType == types.EventType("unclaimed") {
+			t.Errorf("stale conditional release recorded an unclaimed event: %+v", e)
+		}
+	}
+}
+
 // testReclaimSkipsFreshLease: a live claim (fresh, unexpired lease) is left untouched.
 func testReclaimSkipsFreshLease(t *testing.T, f Factory) {
 	s := f(t)
