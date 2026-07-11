@@ -86,7 +86,7 @@ bd update test-abc --type bug --priority 0
 bd dep add test-abc test-def
 
 # Add labels
-bd update test-abc --labels "urgent,frontend"
+bd update test-abc --set-labels "urgent,frontend"
 ```
 
 ## Viewing TODO Details

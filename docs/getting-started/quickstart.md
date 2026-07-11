@@ -67,8 +67,7 @@ The wizard will:
 - Create `.beads/` directory and embedded Dolt database
 - **Prompt for your role** (maintainer or contributor) unless a flag is provided
 - Import existing issues from git (if any)
-- Prompt to install git hooks (recommended)
-- Prompt to configure git merge driver (recommended)
+- Install git hooks (skip with `--skip-hooks`)
 
 Notes:
 - Dolt is the default (and only) storage backend. Data is stored in `.beads/embeddeddolt/`.
@@ -184,7 +183,7 @@ bd ready
 
 Output:
 ```
-Ready work (1 issues with no blockers):
+Ready work (1 issues with no active blockers):
 
 1. [P1] bd-1: Set up database
 ```
@@ -322,7 +321,7 @@ bd migrate --dry-run
 bd migrate
 
 # Migrate and clean up old files
-bd migrate --cleanup --yes
+bd migrate --yes
 ```
 
 **AI agents:** Use `--inspect` to analyze migration safety before running. The system verifies required config keys and data integrity invariants.
@@ -350,7 +349,7 @@ bd admin cleanup --force
 - After major project milestones when old issues are no longer relevant
 - Before archiving a project phase
 
-**Note:** Compaction is permanent graceful decay. Original content is discarded but viewable via `bd restore <id>` from git history.
+**Note:** Compaction is permanent graceful decay. Original content is discarded but recoverable via `bd restore <id>` (from the pre-compaction snapshot, with Dolt history as fallback).
 
 ## Next steps
 

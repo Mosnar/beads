@@ -105,11 +105,10 @@ title = "Deploy {{version}} to {{environment}}"
 
 ## Step Types
 
-| Type | Description |
-|------|-------------|
-| `task` | Normal work step (default) |
-| `human` | Requires human action |
-| `gate` | Async coordination point |
+A step's `type` sets the issue type of the bead it creates: `task`
+(default), `bug`, `feature`, `epic`, or `chore`. Any other value falls back
+to `task`. Human sign-offs and async waits are expressed with a
+`[steps.gate]` block, not a step type — see [Gates](/workflows/gates).
 
 ## Dependencies
 
@@ -184,7 +183,8 @@ title = "Security scan before {step.title}"
 Formulas are searched in order:
 1. `.beads/formulas/` (project-level)
 2. `~/.beads/formulas/` (user-level)
-3. Built-in formulas
+
+`bd formula list` shows everything visible on the search paths.
 
 ## Using Formulas
 

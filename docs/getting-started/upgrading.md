@@ -240,13 +240,13 @@ with `bd version` and a normal read such as `bd ready`.
 
 If you're upgrading from a much older version of bd, your project may use a different storage backend. bd has gone through several storage eras:
 
-| Era | Versions | Storage | 
-|---|---|---|
-| SQLite | v0.30–v0.50 | `.beads/beads.db` |
-| Dolt server | v0.50–v0.58 | `.beads/dolt/` (external server) |
-| Embedded Dolt (old) | v0.59–v0.63.2 | `.beads/dolt/` (in-process) |
-| Embedded Dolt (current) | v0.63.3+ | `.beads/embeddeddolt/` |
+Identify your installation's era by what lives under `.beads/`:
 
+| Era | Storage layout |
+|---|---|
+| SQLite (pre-Dolt, up to ~v0.50) | `.beads/beads.db` |
+| Dolt server | `.beads/dolt/` |
+| Embedded Dolt (the default since its introduction) | `.beads/embeddeddolt/` |
 ### From v0.63.3+ (current era)
 
 Upgrade the binary and run:

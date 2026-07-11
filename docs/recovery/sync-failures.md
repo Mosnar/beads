@@ -20,7 +20,7 @@ bd doctor
 bd dolt show
 
 # View Dolt server logs
-tail -50 .beads/dolt/sql-server.log
+tail -50 .beads/dolt-server.log   # server mode
 ```
 
 ## Solution

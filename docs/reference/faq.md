@@ -15,7 +15,7 @@ GitHub Issues plus the `gh` CLI can approximate some features, but hosted tracke
 
 | Capability | beads | GitHub Issues |
 |---|---|---|
-| Typed dependencies | Four types (`blocks`, `related`, `parent-child`, `discovered-from`) with distinct behaviors | Only "blocks/blocked by" links; no semantic enforcement, no `discovered-from` for agent work discovery |
+| Typed dependencies | Core types (`blocks`, `related`, `parent-child`, `discovered-from`) plus workflow and knowledge-graph edges | Only "blocks/blocked by" links; no semantic enforcement, no `discovered-from` for agent work discovery |
 | Ready-work detection | `bd ready` computes transitive blocking offline in milliseconds | No built-in "ready" concept; requires custom GraphQL plus a sync service |
 | Offline-first task memory | Works offline; issues live in a local, version-controlled database; hash IDs prevent collisions on merge | Cloud-first; requires network and auth; no branch-scoped task state |
 | Conflicts and duplicates | Automatic collision resolution; duplicate merge with dependency consolidation and reference rewriting | Manual close-as-duplicate; no safe bulk merge, no cross-reference updates |
@@ -74,7 +74,7 @@ bd create "Add Stripe"  # bd-f14c — no collision
 git merge feature-auth  # clean merge, distinct IDs
 ```
 
-IDs start at 4 characters and automatically grow (5, then 6) as the database passes roughly 500 and 1,500 issues, keeping collision probability low. See [Hash IDs](/core-concepts/hash-ids) and [Adaptive IDs](/core-concepts/adaptive-ids), or the [collision math](https://github.com/gastownhall/beads/blob/main/engdocs/COLLISION_MATH.md) if you want the numbers.
+IDs start at 3 characters and grow automatically (up to 8) as the database grows, keeping the collision probability under a fixed threshold. See [Hash IDs](/core-concepts/hash-ids) and [Adaptive IDs](/core-concepts/adaptive-ids), or the [collision math](https://github.com/gastownhall/beads/blob/main/engdocs/COLLISION_MATH.md) if you want the numbers.
 
 ### What are hierarchical child IDs?
 
@@ -204,7 +204,7 @@ Both are instantiated workflows made of real beads. **Molecules** (`bd mol pour`
 
 **Use CLI + hooks** when a shell is available (Claude Code, Cursor, and similar):
 
-- Lower context overhead (roughly 1-2k tokens vs 10-50k for MCP tool schemas)
+- Lower context overhead (on the order of a couple thousand tokens, versus tens of thousands for a full set of MCP tool schemas)
 - Faster execution
 - Universal across editors
 
@@ -240,7 +240,7 @@ For GitHub, Jira, and Linear, use the same integrations in the push direction (`
 
 ### How does beads handle scale?
 
-Dolt handles millions of rows efficiently. For a typical project with thousands of issues, commands complete in under 100ms, search is instant, and dependency graphs traverse quickly. For extremely large projects (100k+ issues), consider splitting into multiple databases per component.
+Dolt is a SQL database and comfortably handles far more issues than a typical project accumulates. Commands stay fast at the thousands-of-issues scale; for extremely large projects (100k+ issues), consider splitting into multiple databases per component.
 
 ### What if my database gets too large?
 
@@ -301,7 +301,7 @@ This applies to server mode only (embedded mode has no server):
 
 ```bash
 bd doctor                        # Check health
-cat .beads/dolt/sql-server.log   # Check server logs
+cat .beads/dolt-server.log       # Check server logs (server mode)
 bd dolt stop && bd dolt start    # Restart the server
 ```
 

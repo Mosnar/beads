@@ -31,18 +31,20 @@ type (`bug`, `task`, `feature`, `epic`, `chore`, and friends — see
 and a status moving `open` → `in_progress` → `closed`. "Bead" and "issue"
 name the same thing; the CLI says issue, the product says bead.
 
-**Dependencies** connect beads into a graph. Only one edge type affects what
+**Dependencies** connect beads into a graph. Two edge types shape what
 agents may work on:
 
 | Type | Meaning | Affects ready work |
 |------|---------|--------------------|
 | `blocks` | hard ordering — the blocker must close first | **yes** |
-| `parent-child` | epic/subtask structure | no |
+| `parent-child` | epic/subtask structure | **indirectly** — a blocked parent blocks its children |
 | `discovered-from` | provenance — found while working on the parent | no |
 | `related` | soft association | no |
 
-Richer knowledge-graph edges (`relates_to`, `duplicates`, `supersedes`,
-`replies_to`) are covered in [Graph Links](/core-concepts/graph-links).
+Workflow steps add two more blocking types (`conditional-blocks`,
+`waits-for`) — see [Molecules](/workflows/molecules). Richer knowledge-graph
+edges (`relates-to`, `duplicates`, `supersedes`, `replies-to`) are covered in
+[Graph Links](/core-concepts/graph-links).
 
 ## Ready work — what `bd ready` computes
 
@@ -78,7 +80,7 @@ bd ready --claim --json    # atomically claim the first match
 ## Hash IDs — why agents never collide
 
 IDs like `bd-a1b2` are content-derived hashes (of title, description,
-creation time, and workspace), not sequence numbers. Two agents (or two
+creator, and creation time, plus a collision nonce), not sequence numbers. Two agents (or two
 branches) creating beads at the same time cannot mint the same ID, so merges
 never renumber work. The hash length extends automatically on collision and
 scales with database size — see
@@ -106,8 +108,7 @@ flowchart LR
 - A **wisp** is the same instantiation with an ephemeral lifecycle — gone at
   the next `bd purge` — see [Wisps](/workflows/wisps).
 - A **gate** parks a step until something external happens: a human sign-off,
-  a timer, a GitHub run or PR, or a bead closing in another repo — see
-  [Gates](/workflows/gates).
+  a timer, or a GitHub run or PR — see [Gates](/workflows/gates).
 
 ## Sync — how work moves between machines
 

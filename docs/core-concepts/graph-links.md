@@ -6,13 +6,13 @@ Beads supports several types of links between issues to create a knowledge graph
 
 ## Link Types
 
-### replies_to - Conversation Threading
+### replies-to - Conversation Threading
 
 Creates message threads, similar to email or chat conversations.
 
 **Created by:**
 - Orchestrator mail reply commands (orchestrator handles messaging)
-- `bd dep add <new-id> <original-id> --type replies_to` (manual linking)
+- `bd dep add <new-id> <original-id> --type replies-to` (manual linking)
 
 **Use cases:**
 - Agent-to-agent message threads
@@ -26,9 +26,9 @@ Creates message threads, similar to email or chat conversations.
 # orchestrator mail send worker/ -s "Review needed" -m "Please review issue-xyz"
 # Creates: msg-a1b2
 
-# Reply (automatically sets replies_to)
+# Reply (automatically sets replies-to)
 # orchestrator mail reply msg-a1b2 -m "Done! Approved with minor comments."
-# Creates: msg-c3d4 with replies_to: msg-a1b2
+# Creates: msg-c3d4 with replies-to: msg-a1b2
 ```
 
 **Viewing threads:**
@@ -37,7 +37,7 @@ Creates message threads, similar to email or chat conversations.
 bd show gt-a1b2 --thread
 ```
 
-### relates_to - Loose Associations
+### relates-to - Loose Associations
 
 Bidirectional "see also" links between related issues. Not blocking, not hierarchical - just related.
 
@@ -58,8 +58,8 @@ Bidirectional "see also" links between related issues. Not blocking, not hierarc
 ```bash
 # Link two related issues
 bd relate bd-auth bd-security
-# Result: bd-auth.relates_to includes bd-security
-#         bd-security.relates_to includes bd-auth
+# Result: bd-auth.relates-to includes bd-security
+#         bd-security.relates-to includes bd-auth
 
 # View related issues
 bd show bd-auth
@@ -70,7 +70,7 @@ bd unrelate bd-auth bd-security
 ```
 
 **Multiple links:**
-An issue can have multiple relates_to links:
+An issue can have multiple relates-to links:
 
 ```bash
 bd relate bd-api bd-auth
@@ -158,8 +158,8 @@ These fields are added to issues:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `replies_to` | string | ID of parent message (threading) |
-| `relates_to` | []string | IDs of related issues (bidirectional) |
+| `replies-to` | string | ID of parent message (threading) |
+| `relates-to` | []string | IDs of related issues (bidirectional) |
 | `duplicate_of` | string | ID of canonical issue |
 | `superseded_by` | string | ID of replacement issue |
 
@@ -190,7 +190,7 @@ Related to (3):
 bd show <id> --thread
 ```
 
-Follows `replies_to` chain to show conversation history.
+Follows `replies-to` chain to show conversation history.
 
 ### JSON Output
 
@@ -204,7 +204,7 @@ Returns all fields including graph links:
 {
   "id": "bd-auth",
   "title": "Implement authentication",
-  "relates_to": ["bd-security", "bd-users", "bd-sessions"],
+  "relates-to": ["bd-security", "bd-users", "bd-sessions"],
   "duplicate_of": "",
   "superseded_by": ""
 }
@@ -216,8 +216,8 @@ Returns all fields including graph links:
 |-----------|-----------|---------------|-----------|
 | `blocks` | Yes | No | One-way |
 | `parent_id` | No | Yes | One-way |
-| `relates_to` | No | No | Bidirectional |
-| `replies_to` | No | No | One-way |
+| `relates-to` | No | No | Bidirectional |
+| `replies-to` | No | No | One-way |
 | `duplicate_of` | No | No | One-way |
 | `superseded_by` | No | No | One-way |
 
@@ -268,8 +268,8 @@ Build conversation chains (via orchestrator mail):
 
 ## Best Practices
 
-1. **Use relates_to sparingly** - Too many links become noise
-2. **Prefer specific link types** - `duplicates` is clearer than generic relates_to
+1. **Use relates-to sparingly** - Too many links become noise
+2. **Prefer specific link types** - `duplicates` is clearer than generic relates-to
 3. **Keep threads shallow** - Deep reply chains are hard to follow
 4. **Document supersedes chains** - Note why version changed
 5. **Query before creating duplicates** - `bd search` first
@@ -277,5 +277,5 @@ Build conversation chains (via orchestrator mail):
 ## See Also
 
 - [Messaging](https://github.com/gastownhall/beads/blob/main/engdocs/messaging.md) - Mail commands and threading
-- [Dependencies](/getting-started/quickstart#dependencies) - Blocking dependencies
+- [Dependencies](/getting-started/quickstart#add-dependencies) - Blocking dependencies
 - [CLI Reference](/cli-reference/index) - All commands
