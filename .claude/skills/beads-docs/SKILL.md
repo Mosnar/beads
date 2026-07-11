@@ -102,8 +102,9 @@ prose-vs-literal rename discipline is in
 ## 4. Information architecture
 
 Navigation lives in `docs/docs.json`: Getting Started, Core Concepts,
-Architecture, CLI Reference (generated), Workflows, Recovery, Multi-Agent,
-Integrations, Community, Reference.
+Architecture, Workflows, Recovery, Multi-Agent, Integrations, Community, and
+Reference — with the generated CLI Reference nested inside Reference as a
+collapsed sub-group.
 
 - **Every section has an index/Overview page** that introduces the section in
   a sentence or two, then lists every child page with a one-line accurate

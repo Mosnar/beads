@@ -28,3 +28,5 @@ rather than teach concepts (that's [How Beads Works](/core-concepts/index)).
   and binary verification.
 - [FAQ](/reference/faq) — beads vs other trackers, and the questions
   everyone asks in week one.
+- [CLI Reference](/cli-reference/index) — the generated page-per-command
+  reference, nested below as a collapsible group.

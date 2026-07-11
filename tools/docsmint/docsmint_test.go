@@ -69,10 +69,16 @@ Create an issue
         ]
       },
       {
-        "group": "CLI Reference",
+        "group": "Reference",
         "pages": [
-          "cli-reference/index",
-          "cli-reference/stale-command"
+          "reference/index",
+          {
+            "group": "CLI Reference",
+            "pages": [
+              "cli-reference/index",
+              "cli-reference/stale-command"
+            ]
+          }
         ]
       }
     ]
@@ -135,6 +141,7 @@ func TestRunSplicesNavAndPreservesOtherGroups(t *testing.T) {
 		`"cli-reference/create"`,
 		`"cli-reference/show"`,
 		`"Getting Started"`,
+		`"reference/index"`,
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("docs.json missing %q:\n%s", want, got)
