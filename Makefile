@@ -251,6 +251,30 @@ check-docs:
 	@./scripts/check-doc-freshness.sh
 	@go test ./test/docsync
 
+# Render committed Excalidraw diagram sources to SVG (idempotent; only
+# re-renders when the .excalidraw source is newer than its .svg). Both the
+# source and the rendered SVG are committed; docs pages embed
+# /diagrams/excalidraw-rendered/<name>.svg. Rendered images must be looked
+# at before committing — layout problems are invisible in a text diff.
+diagrams-excalidraw:
+	@set -e; \
+	src_dir=docs/diagrams/excalidraw; \
+	out_dir=docs/diagrams/excalidraw-rendered; \
+	mkdir -p "$$out_dir"; \
+	shopt -s nullglob 2>/dev/null || true; \
+	rendered=0; \
+	for f in "$$src_dir"/*.excalidraw; do \
+		[ -e "$$f" ] || continue; \
+		base=$$(basename "$$f" .excalidraw); \
+		out="$$out_dir/$$base.svg"; \
+		if [ ! -e "$$out" ] || [ "$$f" -nt "$$out" ]; then \
+			echo "excalidraw -> $$out"; \
+			npx -y @swiftlysingh/excalidraw-cli convert "$$f" --format svg --padding 16 --output "$$out"; \
+			rendered=$$((rendered+1)); \
+		fi; \
+	done; \
+	echo "excalidraw: rendered $$rendered file(s)"
+
 # Live preview of the Mintlify docs site (docs/) at http://localhost:3000
 docs-dev:
 	./mint.sh dev

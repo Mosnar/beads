@@ -157,10 +157,12 @@ not drift from the code).
 ## 7. Diagrams
 
 Mermaid fences render natively — prefer them for graphs and flows. For richer
-diagrams use the Excalidraw pattern from Gas City: commit the `.excalidraw`
-source next to the rendered `.svg`, keep labels short (a two-line "Name /
-role" beats a sentence crammed in a box), and embed with descriptive alt
-text. Two non-negotiables:
+diagrams use the Excalidraw pipeline: author the `.excalidraw` source under
+`docs/diagrams/excalidraw/`, render with `make diagrams-excalidraw` (source
+and rendered `.svg` are both committed), embed as
+`/diagrams/excalidraw-rendered/<name>.svg` with descriptive alt text, and
+keep labels short (a two-line "Name / role" beats a sentence crammed in a
+box). Two non-negotiables:
 
 - **Rasterize and look at every rendered diagram** — text overflow and layout
   problems are invisible in a text diff.
