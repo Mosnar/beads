@@ -291,6 +291,17 @@ func ValidateCreateIssuesMixedBucketDependencies(issues []*types.Issue) error {
 	return err
 }
 
+// FilterCreateIssuesMixedBucketDependencies applies the same cross-bucket
+// dependency policy as CreateIssuesInTx, but over the full issue set. Callers
+// that split one logical batch into bounded sub-batches (chunked import) must
+// run this once up front: the per-batch filter inside the engine only sees one
+// sub-batch, so it could no longer detect an edge whose endpoints land in
+// different chunks. Filtered edges are reported via opts.OnSkippedDependency;
+// issues whose dependency list changes are copied, never mutated.
+func FilterCreateIssuesMixedBucketDependencies(issues []*types.Issue, opts storage.BatchCreateOptions) ([]*types.Issue, error) {
+	return filterCreateIssuesMixedBucketDependencies(issues, opts)
+}
+
 func filterCreateIssuesMixedBucketDependencies(issues []*types.Issue, opts storage.BatchCreateOptions) ([]*types.Issue, error) {
 	batchWispByID := make(map[string]bool, len(issues))
 	hasRegular := false
