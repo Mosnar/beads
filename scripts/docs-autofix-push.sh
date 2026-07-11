@@ -55,10 +55,7 @@ path_allowed() {
     case "$1" in *..*) return 1 ;; esac
     [[ "$1" == "docs/CLI_REFERENCE.md" ]] && return 0
     [[ "$1" == "docs/docs.json" ]] && return 0
-    [[ "$1" == "website/static/llms-full.txt" ]] && return 0
     [[ "$1" =~ ^docs/cli-reference/[A-Za-z0-9_.-]+\.md$ ]] && return 0
-    [[ "$1" =~ ^website/docs/cli-reference/[A-Za-z0-9_.-]+\.md$ ]] && return 0
-    [[ "$1" =~ ^website/versioned_docs/[A-Za-z0-9_.-]+/cli-reference/[A-Za-z0-9_.-]+\.md$ ]] && return 0
     return 1
 }
 
@@ -159,7 +156,7 @@ git commit -m "docs: regenerate CLI reference"
 git push
 \`\`\`
 
-Or regenerate from scratch: \`CGO_ENABLED=0 go build -tags gms_pure_go -o ./bd-docs ./cmd/bd/ && ./scripts/generate-cli-docs.sh ./bd-docs && ./scripts/generate-llms-full.sh && rm ./bd-docs\`
+Or regenerate from scratch: \`CGO_ENABLED=0 go build -tags gms_pure_go -o ./bd-docs ./cmd/bd/ && ./scripts/generate-cli-docs.sh ./bd-docs && rm ./bd-docs\`
 
 _Automated by the [docs-autofix workflow]($RUN_URL); this comment is updated in place on each failing run._
 EOF

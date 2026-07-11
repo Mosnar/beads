@@ -73,8 +73,6 @@ GEN_PATHSPECS=(
     "docs/CLI_REFERENCE.md"
     "docs/cli-reference"
     "docs/docs.json"
-    "website/docs/cli-reference"
-    "website/static/llms-full.txt"
 )
 
 print_fix_help() {
@@ -82,7 +80,6 @@ print_fix_help() {
     echo "To fix in any environment (build a canonical bd, then regenerate):"
     echo "  CGO_ENABLED=0 go build -tags gms_pure_go -o ./bd-docs ./cmd/bd/"
     echo "  ./scripts/generate-cli-docs.sh ./bd-docs"
-    echo "  ./scripts/generate-llms-full.sh"
     echo "  rm ./bd-docs"
 }
 
@@ -95,9 +92,6 @@ regen_worktree() {
         cd "$dir"
         CGO_ENABLED=0 go build -tags gms_pure_go -o "$dir/.docs-bd" ./cmd/bd/
         ./scripts/generate-cli-docs.sh "$dir/.docs-bd" >/dev/null
-        if [ -x ./scripts/generate-llms-full.sh ]; then
-            ./scripts/generate-llms-full.sh >/dev/null
-        fi
         rm -f "$dir/.docs-bd"
     )
 }
@@ -109,13 +103,13 @@ surface_fingerprint() {
     (
         cd "$dir"
         local f d
-        for f in docs/CLI_REFERENCE.md docs/docs.json website/static/llms-full.txt; do
+        for f in docs/CLI_REFERENCE.md docs/docs.json; do
             if [ -f "$f" ]; then
                 printf '== %s\n' "$f"
                 cat "$f"
             fi
         done
-        for d in website/docs/cli-reference docs/cli-reference; do
+        for d in docs/cli-reference; do
             if [ -d "$d" ]; then
                 find "$d" -type f -name '*.md' | sort | while IFS= read -r f; do
                     printf '== %s\n' "$f"
@@ -198,7 +192,7 @@ if [ -z "$PR_TOUCHED" ] && [ "$FP_HEAD" = "$FP_BASE" ]; then
     echo "this change neither alters the regenerated CLI surface nor touches generated files."
     git -C "$W_HEAD" diff --stat | sed 's/^/  /'
     echo "Not failing this PR. The base branch needs a docs regeneration:"
-    echo "  ./scripts/generate-cli-docs.sh && ./scripts/generate-llms-full.sh"
+    echo "  ./scripts/generate-cli-docs.sh"
     if [ -n "${GITHUB_ACTIONS:-}" ]; then
         echo "::warning::Generated CLI docs are stale on the base branch (inherited drift, not introduced by this PR)."
     fi

@@ -175,7 +175,6 @@ The tag workflow re-runs release-critical package gates before publishing:
 - `make ci-package-mcp` builds and validates the MCP package, then the PyPI job
   publishes the validated `dist/*` artifact from that gate.
 - `make ci-package-npm` validates the npm wrapper package before npm publish.
-- `make ci-website` validates the release docs/website build before GoReleaser
   publishes GitHub release assets.
 
 The npm publish job also waits for the macOS release assets, because the npm
@@ -366,24 +365,14 @@ git commit -m "chore: Update plugin marketplaces to v0.22.0"
 
 **Note:** These files define how beads appears in Claude Code and Codex plugin marketplaces. Version should match the release version.
 
-### Documentation Site (Docusaurus)
+### Documentation Site (Mintlify)
 
-The published docs at GitHub Pages are versioned. Unreleased edits live in
-`website/docs/` (**Next**); each release should add a snapshot:
-
-```bash
-cd website
-npm ci
-npm run docusaurus docs:version X.Y.Z
-```
-
-Then set `lastVersion` in `website/docusaurus.config.ts` to `X.Y.Z` so
-visitors default to the latest stable docs (not **Next**).
-
-Commit `website/versioned_docs/`, `website/versioned_sidebars/`, and
-`website/versions.json` with the release. The
-`scripts/generate-llms-full.sh` script pulls from the latest entry in
-`versions.json` so `llms-full.txt` stays aligned with that snapshot.
+The published docs are the Mintlify site rooted at `docs/`, deployed from
+main via the Mintlify GitHub integration — no release-time docs snapshot is
+needed. The site documents the current release line only (see
+engdocs/decisions/2026-07-10-mintlify-docs-overhaul.md). The generated CLI
+reference is kept fresh by `scripts/generate-cli-docs.sh` and its PR drift
+gate, not by the release process.
 
 ## 6. npm Package Release
 
@@ -543,7 +532,6 @@ identifier (e.g. `1.1.0-rc.1`); Python tooling normalizes this to PEP 440 form
 #    same as a stable release. Date the CHANGELOG section.
 
 # 2. Bump versions. update-versions.sh accepts a prerelease identifier and,
-#    for prereleases, skips the Docusaurus docs snapshot automatically.
 ./scripts/update-versions.sh 1.1.0-rc.1
 #    Windows PE numeric fields (winres file_version/product_version and the
 #    manifest <assemblyIdentity> version) are set to the base version 1.1.0,

@@ -10,7 +10,7 @@ endif
 endif
 
 .PHONY: all build doctor-build test test-icu-path test-full-cgo test-regression test-upgrade test-cross-version test-migration corpus-regen bench bench-quick clean clean-test-tmp install install-force help check-up-to-date fmt fmt-check check-testing-short
-.PHONY: ci-pr-core ci-pr-policy ci-pr-lint ci-package-mcp ci-package-npm ci-website
+.PHONY: ci-pr-core ci-pr-policy ci-pr-lint ci-package-mcp ci-package-npm
 
 # Default target
 all: build
@@ -131,9 +131,6 @@ ci-package-mcp:
 
 ci-package-npm:
 	@./scripts/ci/package-npm.sh
-
-ci-website:
-	@./scripts/ci/website.sh
 
 # Run differential regression tests (baseline v0.49.6 vs current worktree).
 # Downloads baseline binary on first run; cached in ~/Library/Caches/beads-regression/.
@@ -290,7 +287,6 @@ help:
 	@echo "  make ci-pr-lint  - Run required PR formatting and lint wrapper"
 	@echo "  make ci-package-mcp - Run MCP Python package gate"
 	@echo "  make ci-package-npm - Run npm package gate"
-	@echo "  make ci-website - Run website typecheck/build gate"
 	@echo "  make test-regression - Run differential regression tests (baseline vs candidate)"
 	@echo "  make test-upgrade  - Run upgrade smoke tests (release stability gate)"
 	@echo "  make test-cross-version - Run cross-version smoke tests (last 30 tags)"

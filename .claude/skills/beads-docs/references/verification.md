@@ -11,8 +11,9 @@ Run these before considering docs work complete. Ordered cheapest-first.
 go test ./test/docsync
 
 # 2. Generated CLI docs freshness: regenerates from the live command tree
-#    and diffs docs/CLI_REFERENCE.md, docs/cli-reference/, the CLI pages
-#    array in docs/docs.json, website/docs/cli-reference/, and llms-full.
+#    and diffs docs/CLI_REFERENCE.md, docs/cli-reference/, and the CLI
+#    pages array in docs/docs.json (bd emits generic pages to staging;
+#    tools/docsmint produces the committed Mintlify form).
 ./scripts/generate-cli-docs.sh --check
 # CI's blame-scoped variant (only fails PRs for drift they introduced):
 ./scripts/check-cli-docs-drift.sh
@@ -30,9 +31,6 @@ make docs-dev              # or: ./mint.sh dev   -> http://localhost:3000
 #    .github/workflows/docs-mintlify.yml):
 ./mint.sh broken-links
 ```
-
-Until cutover, the Docusaurus site keeps building from `website/` — if you
-touched anything it consumes, `make ci-website` must stay green.
 
 ## Principles the gates don't fully cover
 

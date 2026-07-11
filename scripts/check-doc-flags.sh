@@ -44,7 +44,6 @@ SYNC_REFS=$(grep -rn 'bd sync\b' \
     "$PROJECT_ROOT"/README.md \
     "$PROJECT_ROOT"/npm-package/*.md \
     "$PROJECT_ROOT"/integrations/*/README.md \
-    "$PROJECT_ROOT"/website/docs/**/*.md \
     "$PROJECT_ROOT"/plugins/beads/skills/beads/commands/*.md \
     "$PROJECT_ROOT"/plugins/beads/skills/beads/resources/*.md \
     2>/dev/null \
@@ -74,7 +73,6 @@ BRANCH_REFS=$(grep -rn 'bd init.*--branch' \
     "$PROJECT_ROOT"/AGENT_INSTRUCTIONS.md \
     "$PROJECT_ROOT"/AGENTS.md \
     "$PROJECT_ROOT"/README.md \
-    "$PROJECT_ROOT"/website/docs/**/*.md \
     2>/dev/null \
     | grep -v 'CHANGELOG\|removed\|was removed\|no longer\|deprecated' \
     || true)
@@ -98,7 +96,6 @@ SQLITE_REFS=$(grep -rn 'beads\.db\|default\.db\|sqlite3.*\.beads\|\.beads/.*\.db
     "$PROJECT_ROOT"/AGENT_INSTRUCTIONS.md \
     "$PROJECT_ROOT"/AGENTS.md \
     "$PROJECT_ROOT"/README.md \
-    "$PROJECT_ROOT"/website/docs/**/*.md \
     2>/dev/null \
     | grep -v 'CHANGELOG\|removed\|legacy\|migration\|migrate\|was removed\|pre-\|old\|deprecated' \
     || true)
@@ -135,7 +132,7 @@ if [ -f "$CLI_REF" ]; then
             echo "PASS: docs/CLI_REFERENCE.md covers all live top-level CLI commands"
         fi
 
-        WEBSITE_DIRS=("$PROJECT_ROOT/website/docs/cli-reference" "$PROJECT_ROOT/docs/cli-reference")
+        WEBSITE_DIRS=("$PROJECT_ROOT/docs/cli-reference")
         for dir in "${WEBSITE_DIRS[@]}"; do
             if [ ! -d "$dir" ]; then
                 continue

@@ -172,14 +172,18 @@ text. Two non-negotiables:
 Never hand-edit a generated file. The generated surfaces are:
 
 - `docs/cli-reference/*.md` and the CLI Reference pages array inside
-  `docs/docs.json` — emitted by `bd help --docs-root` from the Cobra command
-  strings in `cmd/bd/*.go`.
-- `docs/CLI_REFERENCE.md` (single-file reference for GitHub) and
-  `website/docs/cli-reference/` (Docusaurus, until cutover) — same emitter.
-- `website/static/llms-full.txt` — `scripts/generate-llms-full.sh`.
+  `docs/docs.json` — bd emits vendor-neutral pages (`bd help --docs-root`,
+  from the Cobra command strings in `cmd/bd/*.go`) into an uncommitted
+  staging tree, and `tools/docsmint` post-processes them into the committed
+  Mintlify form. bd itself never emits Mintlify (or any site-generator)
+  specifics; that lives in docsmint.
+- `docs/CLI_REFERENCE.md` — the single-file reference, emitted directly by
+  `bd help --docs-root`.
 
 To change wording in any of them, edit the Go source (`Short:`, `Long:`,
-`Example:` strings) and run `./scripts/generate-cli-docs.sh`. The drift gates
+`Example:` strings) and run `./scripts/generate-cli-docs.sh` (which runs both
+stages). To change the Mintlify page form itself (comment markers, link
+style, nav), edit `tools/docsmint` and its tests. The drift gates
 (`generate-cli-docs.sh --check`, `scripts/check-cli-docs-drift.sh` in PR CI,
 and the docs-autofix bot) fail or auto-fix any hand edit.
 

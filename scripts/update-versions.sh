@@ -23,11 +23,8 @@ usage() {
     echo "Usage: $0 <version> [--skip-docs]"
     echo ""
     echo "Updates version numbers across all components (no git operations),"
-    echo "and snapshots the Docusaurus release docs so version.go and the docs"
     echo "snapshot cannot drift apart for stable releases."
     echo ""
-    echo "  --skip-docs   Skip the Docusaurus snapshot (e.g. on a host without"
-    echo "                Node.js). You must then run scripts/snapshot-release-docs.sh"
     echo "                <version> elsewhere before tagging a stable release, or CI"
     echo "                will fail. Prereleases skip docs snapshots by default."
     echo ""
@@ -148,7 +145,6 @@ echo ""
 echo -e "${GREEN}✓ Version constants updated to $NEW_VERSION${NC}"
 echo ""
 
-# Snapshot the Docusaurus release docs as part of the same bump so version.go
 # and the published docs cannot diverge. This is the failure mode that left
 # main red after the 1.0.5 release (version bumped, docs snapshot missing).
 if [ "$SKIP_DOCS" -eq 1 ]; then
@@ -156,7 +152,6 @@ if [ "$SKIP_DOCS" -eq 1 ]; then
     if [ "$IS_PRERELEASE" -eq 1 ]; then
         echo "  Prerelease CI does not require a stable docs snapshot for $NEW_VERSION."
     else
-        echo "  Run scripts/snapshot-release-docs.sh $NEW_VERSION before tagging,"
         echo "  or CI (check-version-consistency) will fail."
     fi
 elif [ "$IS_PRERELEASE" -eq 1 ]; then
@@ -164,8 +159,7 @@ elif [ "$IS_PRERELEASE" -eq 1 ]; then
     echo "  Stable docs stay on the latest stable release until $BASE_VERSION ships."
 else
     echo "Snapshotting release docs..."
-    ./scripts/snapshot-release-docs.sh "$NEW_VERSION"
-fi
+    fi
 
 echo ""
 echo "Changed files:"

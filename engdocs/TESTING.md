@@ -225,7 +225,6 @@ Use the package gate wrappers when touching package or docs surfaces:
 ```bash
 make ci-package-mcp
 make ci-package-npm
-make ci-website
 ```
 
 ### Coverage Signal Policy
