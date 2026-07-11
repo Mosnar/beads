@@ -249,7 +249,7 @@ check-docs:
 	@CGO_ENABLED=0 go build -tags "$(BUILD_TAGS)" -ldflags="-X main.Build=$(GIT_BUILD)" -o $(BUILD_DIR)/bd ./cmd/bd
 	@./scripts/check-doc-flags.sh ./bd
 	@./scripts/check-doc-freshness.sh
-	@go test ./test/docsync
+	@go test -tags=gms_pure_go ./test/docsync
 
 # Render committed Excalidraw diagram sources to SVG (idempotent; only
 # re-renders when the .excalidraw source is newer than its .svg). Both the

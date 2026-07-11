@@ -53,6 +53,8 @@ func run(root string) error {
 
 	var navPages []string
 	for _, name := range pages {
+		// #nosec G304: name comes from os.ReadDir over the repo's own staging
+		// tree (filtered to *.md above), not from external input.
 		data, err := os.ReadFile(filepath.Join(staging, name))
 		if err != nil {
 			return err
@@ -130,6 +132,8 @@ func removeMarkdownFiles(dir string) error {
 // formatting so regeneration is diff-stable. The pages entries are plain
 // slugs, so bracket matching cannot be confused by string contents.
 func spliceCLINav(docsJSONPath string, pages []string) error {
+	// #nosec G304: docsJSONPath is derived from the repo root argument this
+	// developer tool is invoked with; it only ever reads the repo's docs.json.
 	data, err := os.ReadFile(docsJSONPath)
 	if err != nil {
 		return err

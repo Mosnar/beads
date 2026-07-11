@@ -115,7 +115,7 @@ fi
 generate_all() {
     local root="$1"
     "$BD" help --docs-root "$root"
-    (cd "$PROJECT_ROOT" && go run ./tools/docsmint "$root")
+    (cd "$PROJECT_ROOT" && go run -tags=gms_pure_go ./tools/docsmint "$root")
 }
 
 if [ "$CHECK_MODE" -eq 1 ]; then
