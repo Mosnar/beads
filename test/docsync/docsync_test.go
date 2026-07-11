@@ -29,23 +29,11 @@ func repoRoot() string {
 var markdownLinkRE = regexp.MustCompile(`\[[^][]*\]\(([^)]+)\)`)
 
 // docsPublishExemptions lists markdown files under docs/ that are allowed to
-// exist without a docs.json navigation entry. Keep this list tiny: a file
-// belongs here only if it must stay at a stable GitHub path (released bd
-// binaries print it, or old deep links target it) or is generated for GitHub
-// consumption. Engineering docs belong in engdocs/, not here.
+// exist without a docs.json navigation entry. Keep this list tiny: moved
+// pages get an entry in the docs.json redirects array, not a pointer stub
+// (engdocs/decisions/2026-07-10-mintlify-docs-overhaul.md, decision 6).
 var docsPublishExemptions = map[string]bool{
-	"CLI_REFERENCE.md":    true, // generated single-file reference (bd help --all)
-	"QUICKSTART.md":       true, // pointer stub; kept for old deep links
-	"DOLT-BACKEND.md":     true, // pointer stub; kept for old deep links
-	"DOLT.md":             true, // pointer stub; bd doctor output references it
-	"STORAGE-BACKENDS.md": true, // pointer stub; bd init --backend help references it
-	"PLUGIN.md":           true, // pointer stub; bd doctor output references it
-	"RECOVERY.md":         true, // pointer stub; bd dolt output references its runbook anchors
-	"JSON_SCHEMA.md":      true, // pointer stub; bd schema-migration output references it
-	"SYNC_CONCEPTS.md":    true, // pointer stub; bd init agent templates link it on GitHub
-	"SETUP.md":            true, // pointer stub; bd prime help prints docs/SETUP.md#policy-profiles
-	"INSTALLING.md":       true, // pointer stub; bd storage-backend help references it
-	"GIT_INTEGRATION.md":  true, // pointer stub; bd jj-alias output links its jujutsu section
+	"CLI_REFERENCE.md": true, // generated single-file reference (bd help --all)
 }
 
 // rootDocFiles are the curated root-level markdown files whose local links
