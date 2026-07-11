@@ -50,7 +50,7 @@ and its storage (a Dolt database by default). Optionally specify a custom issue 
 
 Dolt is the default backend and the only one with version control (history,
 branching, sync). Select an alternative with --backend=<postgres|mysql|sqlite>;
-see docs/STORAGE-BACKENDS.md for the trade-offs and setup.
+see docs/architecture/storage-backends.md for the trade-offs and setup.
 
 Use --database to specify an existing server database name, overriding the
 default prefix-based naming. This is useful when an external tool (e.g. an orchestrator)
