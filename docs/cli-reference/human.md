@@ -22,6 +22,7 @@ SUBCOMMANDS:
 
 ```
 bd human [flags]
+bd human [command]
 ```
 
 ## bd human dismiss

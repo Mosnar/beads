@@ -19,7 +19,7 @@ Examples:
   bd kv list                 # List all key-value pairs
 
 ```
-bd kv [flags]
+bd kv [command]
 ```
 
 ## bd kv clear

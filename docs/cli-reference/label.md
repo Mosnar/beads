@@ -10,7 +10,7 @@ Generated from `bd help --doc label`.
 Manage issue labels
 
 ```
-bd label [flags]
+bd label [command]
 ```
 
 ## bd label add

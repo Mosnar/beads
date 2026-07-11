@@ -167,6 +167,64 @@ func TestHelpDocFlagTextDoesNotClaimDashMeansStdout(t *testing.T) {
 	}
 }
 
+// Parent commands must document the usage line the binary actually prints:
+// Cobra shows `bd mol [command]` for a non-runnable parent (and both lines
+// for a runnable one), while UseLine() alone yields the misleading
+// `bd mol [flags]` (reproduced against the live binary on 30 pages).
+func TestCommandBodyUsageMatchesCobraForParentCommands(t *testing.T) {
+	root := &cobra.Command{Use: "bd"}
+	mol := &cobra.Command{Use: "mol", Short: "Molecule commands"} // no Run: not runnable
+	mol.AddCommand(testHelpCmd("pour <formula>", "Start a workflow"))
+	root.AddCommand(mol)
+
+	var out bytes.Buffer
+	if err := writeSingleCommandDoc(&out, root, "mol"); err != nil {
+		t.Fatalf("writeSingleCommandDoc() error = %v", err)
+	}
+	got := out.String()
+
+	if !strings.Contains(got, "bd mol [command]") {
+		t.Errorf("parent usage missing 'bd mol [command]':\n%s", got)
+	}
+	if strings.Contains(got, "bd mol [flags]") {
+		t.Errorf("parent usage shows 'bd mol [flags]', which the binary never prints:\n%s", got)
+	}
+
+	// A runnable command with subcommands gets both lines, like Cobra help.
+	root2 := &cobra.Command{Use: "bd"}
+	mail := testHelpCmd("mail [subcommand]", "Mail commands")
+	mail.AddCommand(testHelpCmd("inbox", "List inbox"))
+	root2.AddCommand(mail)
+
+	out.Reset()
+	if err := writeSingleCommandDoc(&out, root2, "mail"); err != nil {
+		t.Fatalf("writeSingleCommandDoc() error = %v", err)
+	}
+	got = out.String()
+	if !strings.Contains(got, "bd mail [subcommand]") {
+		t.Errorf("runnable parent should keep its UseLine:\n%s", got)
+	}
+	if !strings.Contains(got, "bd mail [command]") {
+		t.Errorf("runnable parent should also show the [command] form:\n%s", got)
+	}
+}
+
+// The generated index must publish the global (persistent) flags — the
+// binary prints them on every --help, and no per-command page carries them.
+func TestGenericIndexIncludesGlobalFlags(t *testing.T) {
+	root := &cobra.Command{Use: "bd"}
+	root.PersistentFlags().Bool("json", false, "JSON output for scripting")
+	root.AddCommand(testHelpCmd("show <id>", "Show an issue"))
+	dir := t.TempDir()
+
+	if err := writeGeneratedCLIDocs(root, dir); err != nil {
+		t.Fatalf("writeGeneratedCLIDocs() error = %v", err)
+	}
+	indexPath := filepath.Join(dir, "build", "cli-docs", "index.md")
+	assertFileContains(t, indexPath, "## Global Flags")
+	assertFileContains(t, indexPath, "--json")
+}
+
 func TestWriteGeneratedCLIDocsWritesGenericStagingTree(t *testing.T) {
 	root := &cobra.Command{Use: "bd"}
 	mol := testHelpCmd("mol", "Molecule commands")

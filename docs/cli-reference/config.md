@@ -79,7 +79,7 @@ Examples:
   bd config unset jira.url
 
 ```
-bd config [flags]
+bd config [command]
 ```
 
 ## bd config apply

@@ -21,6 +21,7 @@ Examples:
 
 ```
 bd dep [issue-id] [flags]
+bd dep [command]
 ```
 
 **Flags:**

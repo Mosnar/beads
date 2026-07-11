@@ -26,7 +26,7 @@ DoltHub is recommended for cloud backup:
   Set DOLT_REMOTE_USER and DOLT_REMOTE_PASSWORD for authentication.
 
 ```
-bd backup [flags]
+bd backup [command]
 ```
 
 ## bd backup init

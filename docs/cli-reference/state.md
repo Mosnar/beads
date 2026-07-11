@@ -23,6 +23,7 @@ Examples:
 
 ```
 bd state <issue-id> <dimension> [flags]
+bd state [command]
 ```
 
 ## bd state list

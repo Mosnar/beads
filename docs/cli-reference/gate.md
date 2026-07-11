@@ -29,7 +29,7 @@ Examples:
   bd gate resolve &lt;id&gt;   # Close a gate manually
 
 ```
-bd gate [flags]
+bd gate [command]
 ```
 
 ## bd gate add-waiter

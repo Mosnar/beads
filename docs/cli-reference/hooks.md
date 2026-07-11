@@ -17,7 +17,7 @@ The hooks provide:
 - prepare-commit-msg: Add agent identity trailers for forensics
 
 ```
-bd hooks [flags]
+bd hooks [command]
 ```
 
 ## bd hooks install

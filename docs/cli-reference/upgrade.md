@@ -17,7 +17,7 @@ The upgrade command helps you stay aware of bd version changes:
 Version tracking is automatic - bd updates metadata.json on every run.
 
 ```
-bd upgrade [flags]
+bd upgrade [command]
 ```
 
 ## bd upgrade ack

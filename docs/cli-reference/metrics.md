@@ -22,6 +22,7 @@ any user-supplied text.
 
 ```
 bd metrics [flags]
+bd metrics [command]
 ```
 
 ## bd metrics example

@@ -24,6 +24,7 @@ Examples:
 
 ```
 bd comments [issue-id] [flags]
+bd comments [command]
 ```
 
 **Flags:**

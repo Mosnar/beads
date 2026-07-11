@@ -70,7 +70,7 @@ Examples:
   bd linear status              # Show sync status
 
 ```
-bd linear [flags]
+bd linear [command]
 ```
 
 ## bd linear pull

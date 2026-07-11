@@ -31,7 +31,7 @@ Commands:
 Use "bd formula list" to list available formulas.
 
 ```
-bd mol [flags]
+bd mol [command]
 ```
 
 **Aliases:** protomolecule
@@ -491,6 +491,7 @@ Subcommands:
 
 ```
 bd mol wisp [proto-id] [flags]
+bd mol wisp [command]
 ```
 
 **Flags:**

@@ -172,8 +172,11 @@ fi
 
 if git -C "$W_HEAD" diff --quiet; then
     echo "PASS: committed docs are fresh under the canonical pinned build."
-    echo "(The strict probe failed only because the supplied bd binary differs"
-    echo " from the canonical one. Build with: CGO_ENABLED=0 go build -tags gms_pure_go)"
+    echo "(The strict probe failed for a reason that does not affect committed state:"
+    echo " either the supplied bd binary differs from the canonical pinned build"
+    echo " [CGO_ENABLED=0 go build -tags gms_pure_go], or uncommitted local edits"
+    echo " to generated docs made the working tree diverge. Attribution compares"
+    echo " committed states only - commit local changes before relying on it.)"
     exit 0
 fi
 

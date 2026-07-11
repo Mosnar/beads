@@ -210,8 +210,21 @@ func writeCommandBody(w io.Writer, cmd *cobra.Command) {
 		fmt.Fprintf(w, "%s\n\n", escapeMDXText(cmd.Short))
 	}
 
-	// Usage
-	fmt.Fprintf(w, "```\n%s\n```\n\n", strings.TrimRight(cmd.UseLine(), " "))
+	// Usage — mirror 		: a runnable command shows its
+	// UseLine; a command with subcommands also shows `<path> [command]`.
+	// UseLine() alone appends "[flags]" even on non-runnable parents, which
+	// the binary's help never prints.
+	var usage []string
+	if cmd.Runnable() {
+		usage = append(usage, strings.TrimRight(cmd.UseLine(), " "))
+	}
+	if cmd.HasAvailableSubCommands() {
+		usage = append(usage, cmd.CommandPath()+" [command]")
+	}
+	if len(usage) == 0 {
+		usage = append(usage, strings.TrimRight(cmd.UseLine(), " "))
+	}
+	fmt.Fprintf(w, "```\n%s\n```\n\n", strings.Join(usage, "\n"))
 
 	// Aliases
 	if len(cmd.Aliases) > 0 {
@@ -298,7 +311,7 @@ func writeGenericCLIDocsDir(outDir string, root *cobra.Command) error {
 	}
 
 	commands := availableCommandNames(root)
-	if err := writeMarkdownFile(filepath.Join(outDir, "index.md"), genericCLIReferenceIndex(commands)); err != nil {
+	if err := writeMarkdownFile(filepath.Join(outDir, "index.md"), genericCLIReferenceIndex(root, commands)); err != nil {
 		return err
 	}
 
@@ -316,7 +329,7 @@ func writeGenericCLIDocsDir(outDir string, root *cobra.Command) error {
 	return nil
 }
 
-func genericCLIReferenceIndex(commands []string) string {
+func genericCLIReferenceIndex(root *cobra.Command, commands []string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "---\n")
 	fmt.Fprintf(&b, "title: CLI Reference\n")
@@ -328,6 +341,13 @@ func genericCLIReferenceIndex(commands []string) string {
 	fmt.Fprintf(&b, "```bash\n")
 	fmt.Fprintf(&b, "./scripts/generate-cli-docs.sh\n")
 	fmt.Fprintf(&b, "```\n\n")
+	// The per-command pages list only local flags, mirroring `--help`; the
+	// global flags apply everywhere and are published once, here.
+	if root.PersistentFlags().HasFlags() {
+		fmt.Fprintf(&b, "## Global Flags\n\n")
+		fmt.Fprintf(&b, "These flags apply to all commands:\n\n")
+		fmt.Fprintf(&b, "```\n%s```\n\n", root.PersistentFlags().FlagUsages())
+	}
 	fmt.Fprintf(&b, "## Commands\n\n")
 	for _, cmd := range commands {
 		fmt.Fprintf(&b, "- [`bd %s`](./%s.md)\n", cmd, commandDocID(cmd))

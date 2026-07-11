@@ -27,6 +27,7 @@ BD_ALLOW_REMOTE_MIGRATE=1 remains supported for scripted/CI use.
 
 ```
 bd migrate [flags]
+bd migrate [command]
 ```
 
 **Flags:**

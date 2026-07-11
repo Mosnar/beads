@@ -17,7 +17,7 @@ Configuration can be set via 'bd config' or environment variables:
   ado.url / AZURE_DEVOPS_URL              - Custom base URL (on-prem)
 
 ```
-bd ado [flags]
+bd ado [command]
 ```
 
 ## bd ado projects

@@ -74,7 +74,38 @@ func run(root string) error {
 func transformPage(content string) string {
 	content = htmlCommentRE.ReplaceAllString(content, "{/* $1 */}")
 	content = relativePageLinkRE.ReplaceAllString(content, "](/cli-reference/$1)")
+	content = neutralizeESMHazards(content)
 	return content
+}
+
+// neutralizeESMHazards wraps prose lines whose first token is `export` or
+// `import` in inline code spans. Such lines are legal CommonMark in bd's
+// generic output (indented example lines in help text), but Mintlify's
+// prebuild dedents them to column 0 and then parses them as MDX ESM blocks,
+// which fails the entire page (observed on cli-reference/mail). Lines inside
+// code fences are left untouched.
+func neutralizeESMHazards(content string) string {
+	lines := strings.Split(content, "\n")
+	inFence := false
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "```") {
+			inFence = !inFence
+			continue
+		}
+		if inFence {
+			continue
+		}
+		if strings.HasPrefix(trimmed, "export ") || strings.HasPrefix(trimmed, "import ") {
+			indent := line[:len(line)-len(strings.TrimLeft(line, " \t"))]
+			delim := "`"
+			if strings.Contains(trimmed, "`") {
+				delim = "``"
+			}
+			lines[i] = indent + delim + trimmed + delim
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 func removeMarkdownFiles(dir string) error {

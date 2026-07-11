@@ -18,7 +18,7 @@ For routine maintenance, prefer 'bd doctor --fix' which handles common repairs
 automatically. Use these admin commands for targeted database operations.
 
 ```
-bd admin [flags]
+bd admin [command]
 ```
 
 ## bd admin cleanup

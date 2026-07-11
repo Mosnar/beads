@@ -23,7 +23,7 @@ Examples:
   bd worktree info                          # Show info about current worktree
 
 ```
-bd worktree [flags]
+bd worktree [command]
 ```
 
 ## bd worktree create

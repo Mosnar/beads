@@ -169,6 +169,57 @@ func TestRunSplicesNavAndPreservesOtherGroups(t *testing.T) {
 	}
 }
 
+// Mintlify's prebuild re-serializes markdown and dedents indented prose, so a
+// line whose first token is `export` or `import` — legal CommonMark in bd's
+// generic output — lands at column 0 and gets parsed as an MDX ESM block,
+// failing the whole page (reproduced on /cli-reference/mail). docsmint must
+// neutralize such lines outside code fences.
+func TestRunNeutralizesMDXESMHazardLines(t *testing.T) {
+	root := t.TempDir()
+	seedStaging(t, root)
+	writeFile(t, filepath.Join(root, "build", "cli-docs", "mail.md"), `---
+title: "bd mail"
+---
+
+Examples:
+  # Configure delegation (one-time setup)
+  export BEADS_MAIL_DELEGATE="gt mail"
+  # or
+  import something-that-looks-like-esm
+
+`+"```"+`
+  export FENCED_STAYS_VERBATIM=1
+`+"```"+`
+`)
+
+	if err := run(root); err != nil {
+		t.Fatalf("run() error = %v", err)
+	}
+
+	data, err := os.ReadFile(filepath.Join(root, "docs", "cli-reference", "mail.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	inFence := false
+	for i, line := range strings.Split(string(data), "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "```") {
+			inFence = !inFence
+			continue
+		}
+		trimmed := strings.TrimSpace(line)
+		if !inFence && (strings.HasPrefix(trimmed, "export ") || strings.HasPrefix(trimmed, "import ")) {
+			t.Errorf("line %d is a bare ESM-hazard outside a fence: %q", i+1, line)
+		}
+	}
+	if !strings.Contains(string(data), `export BEADS_MAIL_DELEGATE="gt mail"`) {
+		t.Errorf("hazard line content was lost, not neutralized:\n%s", data)
+	}
+	if !strings.Contains(string(data), "  export FENCED_STAYS_VERBATIM=1") {
+		t.Errorf("fenced export line must stay verbatim:\n%s", data)
+	}
+}
+
 func TestRunRemovesStaleTargetPages(t *testing.T) {
 	root := t.TempDir()
 	seedStaging(t, root)

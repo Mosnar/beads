@@ -38,6 +38,7 @@ Examples:
 
 ```
 bd graph [issue-id] [flags]
+bd graph [command]
 ```
 
 **Flags:**

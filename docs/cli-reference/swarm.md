@@ -13,7 +13,7 @@ A swarm is a structured body of work defined by an epic and its children,
 with dependencies forming a DAG (directed acyclic graph) of work.
 
 ```
-bd swarm [flags]
+bd swarm [command]
 ```
 
 ## bd swarm create

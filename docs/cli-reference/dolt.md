@@ -50,7 +50,7 @@ Examples:
   bd dolt test
 
 ```
-bd dolt [flags]
+bd dolt [command]
 ```
 
 ## bd dolt clean-databases
@@ -169,7 +169,7 @@ Subcommands:
   remove &lt;name&gt;      Remove a remote
 
 ```
-bd dolt remote [flags]
+bd dolt remote [command]
 ```
 
 ### bd dolt remote add

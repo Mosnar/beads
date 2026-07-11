@@ -17,7 +17,7 @@ Configuration can be set via 'bd config' or environment variables:
   github.url / GITHUB_API_URL           - Custom API URL (GitHub Enterprise)
 
 ```
-bd github [flags]
+bd github [command]
 ```
 
 ## bd github pull

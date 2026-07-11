@@ -27,7 +27,7 @@ Examples:
   bd merge-slot release             # Release the slot
 
 ```
-bd merge-slot [flags]
+bd merge-slot [command]
 ```
 
 ## bd merge-slot acquire

@@ -12,7 +12,7 @@ See each sub-command's help for details on how to use the generated script.
 
 
 ```
-bd completion [flags]
+bd completion [command]
 ```
 
 ## bd completion bash

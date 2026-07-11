@@ -31,7 +31,7 @@ Examples:
   bd jira status              # Show sync status
 
 ```
-bd jira [flags]
+bd jira [command]
 ```
 
 ## bd jira pull
