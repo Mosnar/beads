@@ -396,9 +396,9 @@ CGO_ENABLED=1 GOFLAGS=-tags=gms_pure_go go install github.com/steveyegge/beads/c
 
 If you installed via Homebrew, this shouldn't be necessary as the formula already enables CGO. If you're still seeing crashes with the Homebrew version, please [file an issue](https://github.com/gastownhall/beads/issues).
 
-### Claude Code Plugin: MCP server fails to start
+### MCP server fails to start (standalone beads-mcp)
 
-If the Claude Code plugin's MCP server fails immediately after installation, it's likely that `uv` is not installed or not in your PATH.
+The Claude Code plugin itself does not bundle an MCP server. If you configured the standalone `beads-mcp` server (see [MCP Server](/integrations/mcp-server)) and it fails immediately, `uv` is likely not installed or not in your PATH.
 
 **Symptoms:**
 - Plugin slash commands work, but MCP tools are unavailable

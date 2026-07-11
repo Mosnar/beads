@@ -135,7 +135,7 @@ bd migrate --dry-run
 bd migrate
 
 # Migrate and clean up old files
-bd migrate --cleanup --yes
+bd migrate --yes
 ```
 
 ### Remote-backed databases and multiple clones
@@ -230,10 +230,9 @@ schema has already forked — follow the recovery playbook:
 [the pk-fork-refused runbook](/recovery/init-safety#pk-fork-refused).
 
 <Note>
-In **server mode**, `bd doctor` adds a migration-content-skew check that flags a
-forked schema against the cached remote ref — a useful post-upgrade
-verification. It is not available in embedded mode; there, confirm the upgrade
-with `bd version` and a normal read such as `bd ready`.
+`bd doctor` includes a migration-content-skew check that flags a forked
+schema against the cached remote ref — a useful post-upgrade verification.
+It runs in both server and embedded modes.
 </Note>
 
 ## Cross-era Upgrades
@@ -292,7 +291,7 @@ The old binary used an external Dolt SQL server. The new binary uses an embedded
 bd list --json -n 0 --all > .beads/issues.jsonl
 
 # 2. Stop the Dolt server
-dolt sql-server --stop  # or kill the process
+# stop the dolt sql-server process (kill its PID; there is no --stop flag)
 
 # 3. Remove stale server metadata and old storage directories
 rm -f .beads/metadata.json .beads/config.json

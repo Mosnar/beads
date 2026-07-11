@@ -152,7 +152,7 @@ Both work against the same database - use MCP for conversational work, the CLI f
 ```bash
 # Check installation
 which beads-mcp
-beads-mcp --version
+pip show beads-mcp
 
 # uv installs to ~/.local/bin - make sure it's on PATH
 export PATH="$HOME/.local/bin:$PATH"

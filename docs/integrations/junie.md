@@ -41,34 +41,26 @@ Contains workflow instructions that Junie reads automatically:
 
 ### MCP Config (`.junie/mcp/mcp.json`)
 
-Configures the beads MCP server:
+<Warning>
+`bd setup junie` currently writes an MCP config that invokes `bd mcp`, a
+command that does not exist in current bd builds — that config will not
+start a server. Until the recipe is fixed, point Junie at the standalone
+`beads-mcp` server instead:
+</Warning>
 
 ```json
 {
   "mcpServers": {
     "beads": {
-      "command": "bd",
-      "args": ["mcp"]
+      "command": "uvx",
+      "args": ["beads-mcp"]
     }
   }
 }
 ```
 
-## MCP Tools
-
-With MCP configured, Junie can use these tools directly:
-
-| Tool | Description |
-| --- | --- |
-| `mcp_beads_ready` | Find tasks ready for work |
-| `mcp_beads_list` | List issues with filters |
-| `mcp_beads_show` | Show issue details |
-| `mcp_beads_create` | Create new issues |
-| `mcp_beads_update` | Update issue status/priority |
-| `mcp_beads_close` | Close completed issues |
-| `mcp_beads_dep` | Manage dependencies |
-| `mcp_beads_blocked` | Show blocked issues |
-| `mcp_beads_stats` | Get issue statistics |
+See [MCP Server](/integrations/mcp-server) for the server's tool catalog
+and other install options (pip/pipx).
 
 ## CLI Commands
 
@@ -173,11 +165,11 @@ bd setup junie
 ### MCP tools not available
 
 ```bash
-# Verify MCP config exists
+# Verify MCP config exists and points at the beads-mcp server
 cat .junie/mcp/mcp.json
 
-# Test MCP server
-bd mcp --help
+# Verify the server package is installed
+pip show beads-mcp
 ```
 
 ### Changes not syncing

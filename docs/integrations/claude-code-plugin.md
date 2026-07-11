@@ -2,7 +2,7 @@
 title: Beads Claude Code Plugin
 ---
 
-AI-supervised issue tracker for coding workflows. Manage tasks, discover work, and maintain context with simple slash commands and MCP tools.
+AI-supervised issue tracker for coding workflows. Manage tasks, discover work, and maintain context with slash commands, a bundled skill, and lifecycle hooks.
 
 ## What is Beads?
 
@@ -21,11 +21,6 @@ Beads (`bd`) is an issue tracker designed specifically for AI-supervised coding 
 curl -sSL https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh | bash
 ```
 
-2. Install Python and uv (for MCP server):
-```bash
-# Install uv (if not already installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
 
 ### Install Plugin
 
@@ -61,7 +56,7 @@ Then in Claude Code:
 
 ### Restart Claude Code
 
-After installation, restart Claude Code to activate the MCP server.
+After installation, restart Claude Code to load the plugin's commands and hooks.
 
 ## Quick Start
 
@@ -83,7 +78,7 @@ After installation, restart Claude Code to activate the MCP server.
 
 ### Version Management
 
-- **`/beads:version`** - Check bd CLI, plugin, and MCP server versions
+- **`/beads:version`** - Check bd CLI and plugin versions
 
 ### Core Workflow Commands
 
@@ -103,24 +98,14 @@ After installation, restart Claude Code to activate the MCP server.
 
 - **`@task-agent`** - Autonomous agent that finds and completes ready tasks
 
-## MCP Tools Available
+## MCP Tools
 
-The plugin includes a full-featured MCP server with these tools:
-
-- **`init`** - Initialize bd in current directory
-- **`create`** - Create new issue (bug, feature, task, epic, chore)
-- **`list`** - List issues with filters (status, priority, type, assignee)
-- **`ready`** - Find tasks with no blockers ready to work on
-- **`show`** - Show detailed issue info including dependencies
-- **`update`** - Update issue (status, priority, design, notes, etc)
-- **`close`** - Close completed issue
-- **`dep`** - Add dependency (blocks, related, parent-child, discovered-from)
-- **`blocked`** - Get blocked issues
-- **`stats`** - Get project statistics
-
-### MCP Resources
-
-- **`beads://quickstart`** - Interactive quickstart guide
+The plugin does not bundle an MCP server — it works through the bd CLI,
+which Claude Code drives directly (lower token overhead than MCP tool
+schemas). If you want MCP tools as well — for example in MCP-only
+surfaces — configure the standalone `beads-mcp` server alongside the
+plugin; see [MCP Server](/integrations/mcp-server) for its install
+options and full tool catalog.
 
 ## Workflow
 
@@ -162,7 +147,11 @@ Only `blocks` dependencies affect the ready work queue.
 
 ### Auto-Approval Configuration
 
-By default, Claude Code asks for confirmation every time the beads MCP server wants to run a command. This is a security feature, but it can disrupt workflow during active development.
+These settings apply if you configure the standalone [beads-mcp
+server](/integrations/mcp-server) alongside the plugin. By default, Claude
+Code asks for confirmation every time an MCP server wants to run a command.
+This is a security feature, but it can disrupt workflow during active
+development.
 
 **Available Options:**
 
@@ -214,17 +203,6 @@ For active development on trusted projects where you're frequently using beads:
 
 For more information, see the [Claude Code settings documentation](https://docs.claude.com/en/docs/claude-code/settings).
 
-### Environment Variables
-
-The MCP server supports these environment variables:
-
-- **`BEADS_PATH`** - Path to bd executable (default: `bd` in PATH)
-- **`BEADS_DB`** - Path to beads database file (default: auto-discover from cwd)
-- **`BEADS_ACTOR`** - Actor name for audit trail (default: `$USER`)
-- **`BEADS_NO_AUTO_FLUSH`** - Disable automatic sync (default: `false`)
-- **`BEADS_NO_AUTO_IMPORT`** - Disable automatic import (default: `false`)
-
-To customize, edit your Claude Code MCP settings or the plugin configuration.
 
 ## Examples
 
@@ -250,8 +228,8 @@ To customize, edit your Claude Code MCP settings or the plugin configuration.
 # Working on bd-10, found a related bug
 /beads:create "Add rate limiting to API" feature 2
 
-# Link it to current work (via MCP tool)
-# Use `dep` tool: issue="bd-11", depends_on="bd-10", type="discovered-from"
+# Link it to current work
+bd dep add bd-11 bd-10 --type discovered-from
 
 # Close original task
 /beads:close bd-10 "Done, discovered bd-11 for rate limiting"
@@ -300,7 +278,7 @@ Check for plugin updates:
 /plugin update beads
 ```
 
-Claude Code will pull the latest version from GitHub. After updating, **restart Claude Code** to apply MCP server changes.
+Claude Code will pull the latest version from GitHub. After updating, **restart Claude Code** to apply plugin changes.
 
 ### 2. bd CLI Updates
 
@@ -341,10 +319,9 @@ This will show:
 
 ### Version Numbering
 
-Beads follows semantic versioning. The plugin version tracks the bd CLI version:
-- Plugin 0.9.2 requires bd CLI >= 0.9.0 (checked automatically at startup)
-- Major version bumps may introduce breaking changes
-- Check CHANGELOG.md for release notes
+Beads follows semantic versioning. The plugin version tracks the bd CLI
+version; major version bumps may introduce breaking changes — check
+CHANGELOG.md for release notes.
 
 ## Troubleshooting
 

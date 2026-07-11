@@ -115,7 +115,7 @@ bd bootstrap
 
 ```bash
 bd list       # should show your issues
-bd vc log     # should show commit history
+bd history    # should show recent issue history
 ```
 
 If `bd bootstrap` succeeds, you're done — skip to [Day-to-day Sync](#day-to-day-sync).

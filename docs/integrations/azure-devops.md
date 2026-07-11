@@ -248,9 +248,9 @@ When the same issue has been modified both locally and in ADO:
 | `--bootstrap-match` | Enable heuristic title matching for first sync |
 | `--reconcile` | Force reconciliation scan for deleted items |
 | `--issues` | Sync specific issues by bead ID or ADO work item ID |
-| `--label` | Filter by label |
-| `--status` | Filter by beads status |
-| `--type` | Filter by beads issue type |
+| `--states` | Filter by work item states (comma-separated) |
+| `--types` | Filter by work item types (comma-separated) |
+| `--issues` | Sync specific beads by ID |
 
 ## PAT Permissions
 
@@ -300,14 +300,14 @@ beads stores ADO-specific metadata for round-trip fidelity:
 
 ### Common Errors
 
-**"Azure DevOps PAT not configured"**
+**`ado.pat not configured: set via 'bd config set ado.pat <token>' or AZURE_DEVOPS_PAT env var`**
 ```bash
 bd config set ado.pat "your-pat-here"
 # or
 export AZURE_DEVOPS_PAT="your-pat-here"
 ```
 
-**"Azure DevOps organization not configured"**
+**"ado.organization not configured"**
 ```bash
 bd config set ado.org "your-org"
 # or for on-prem:
