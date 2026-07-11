@@ -3528,7 +3528,7 @@ bd init [flags]
       --agents-file string                             Custom filename for agent instructions (default: AGENTS.md)
       --agents-profile string                          AGENTS.md profile: 'minimal' (default, pointer to bd prime) or 'full' (complete command reference)
       --agents-template string                         Path to custom AGENTS.md template (overrides embedded default)
-      --backend string                                 Storage backend: dolt (default), postgres, mysql, or sqlite. See docs/STORAGE-BACKENDS.md.
+      --backend string                                 Storage backend: dolt (default), postgres, mysql, or sqlite. See docs/architecture/storage-backends.md.
       --contributor                                    Run OSS contributor setup wizard
       --database string                                Use existing server database name (overrides prefix-based naming)
       --debug                                          Run the managed Dolt sql-server with --loglevel=debug and CPU profiling (--prof cpu). Persisted to config.yaml as dolt.debug. No effect on externally-managed servers.
@@ -3726,7 +3726,7 @@ Config options:
   (conservative | minimal | team-maintainer; default conservative).
   Set via: bd config set agent.profile team-maintainer
   Or per-session: BD_AGENT_PROFILE=team-maintainer (env var takes precedence).
-  See docs/SETUP.md#policy-profiles for what each profile means.
+  See docs/getting-started/ide-setup.md#policy-profiles for what each profile means.
 
 	Workflow customization:
 	- Place a .beads/PRIME.md file in the local clone or resolved workspace to override the default output entirely.
@@ -6156,7 +6156,7 @@ DESTROY-TOKEN (non-interactive only)
   In interactive (TTY) mode you confirm via a typed prompt instead. The
   token is not echoed by bd's runtime error messages — this is a
   deliberate guard against pattern-matched one-liners (see
-  docs/adr/0002-init-safety-invariants.md).
+  engdocs/adr/0002-init-safety-invariants.md).
 
 EXIT CODES
 
@@ -6168,7 +6168,7 @@ EXIT CODES
 
 RECOVERY
 
-  If you hit a refusal, see docs/RECOVERY.md for step-by-step recovery
+  If you hit a refusal, see docs/recovery/init-safety.md for step-by-step recovery
   playbooks for each exit code.
 
 

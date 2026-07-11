@@ -2148,7 +2148,7 @@ func init() {
 	initCmd.Flags().String("role", "", "Set beads role without prompting: \"maintainer\" or \"contributor\"")
 
 	// Backend selection: dolt (default) plus the SQL-family backends (postgres/mysql/sqlite).
-	initCmd.Flags().String("backend", "", "Storage backend: dolt (default), postgres, mysql, or sqlite. See docs/STORAGE-BACKENDS.md.")
+	initCmd.Flags().String("backend", "", "Storage backend: dolt (default), postgres, mysql, or sqlite. See docs/architecture/storage-backends.md.")
 	initCmd.Flags().String("pg-url", "", "Postgres connection URL (with --backend=postgres). A password may be included for init but is never persisted; set BEADS_PG_PASSWORD for later commands. Falls back to BEADS_POSTGRES_URL.")
 	initCmd.Flags().String("pg-schema", "", "Postgres schema for this workspace's tables (with --backend=postgres; provides search_path isolation)")
 	initCmd.Flags().String("mysql-url", "", "MySQL server DSN (with --backend=mysql), e.g. user:pass@tcp(host:3306)/ . A password may be included for init but is never persisted; set BEADS_MYSQL_PASSWORD for later commands. Falls back to BEADS_MYSQL_URL.")
