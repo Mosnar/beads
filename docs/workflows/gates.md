@@ -1,212 +1,137 @@
 ---
 title: Gates
+description: Async wait conditions that park a workflow step until the world catches up — a human decision, a timer, or a GitHub run or PR.
 ---
 
-Gates are async coordination primitives for workflow orchestration.
+Some workflow steps can't proceed on code alone: a release needs CI to go
+green, a deploy needs a human sign-off, a cleanup should wait 24 hours. A
+**gate** is an issue that represents that wait. It blocks a step the same way
+any blocker does — the step leaves the ready frontier until the gate closes —
+so agents never need to poll or spin.
 
-## What are Gates?
+## How a gate works
 
-Gates block step progression until a condition is met:
-- Human approval
-- Timer expiration
-- External event (GitHub PR, CI, etc.)
+A gate is a bead like any other: created open, it blocks its waiters through
+a normal dependency edge, and the step becomes ready the moment the gate
+closes. Gates close in one of two ways:
 
-## Gate Types
+- **Manually** — `bd gate resolve <gate-id>` (human gates always close this
+  way).
+- **Via `bd gate check`** — evaluates open timer and GitHub gates against
+  the real world and closes the ones whose condition is met.
 
-### Human Gate
-
-Wait for human approval:
-
-```toml
-[[steps]]
-id = "deploy-approval"
-title = "Approval for production deploy"
-type = "human"
-
-[steps.gate]
-type = "human"
-approvers = ["team-lead", "security"]
-require_all = false  # Any approver can approve
+```bash
+bd gate list                 # open gates
+bd gate list --all           # include closed
+bd gate show <gate-id>       # details and waiters
+bd gate check                # evaluate open gates, close satisfied ones
+bd gate check --dry-run      # report without closing
+bd gate resolve <gate-id>    # close a gate manually
 ```
 
-### Timer Gate
+## Gate types
 
-Wait for a duration:
+| Type | Waits for | Closed by |
+|------|-----------|-----------|
+| `human` | a person's decision | `bd gate resolve` only |
+| `timer` | a duration after gate creation | `bd gate check` once the timeout elapses |
+| `gh:run` | a GitHub Actions workflow to complete successfully | `bd gate check` (uses `gh run view`) |
+| `gh:pr` | a pull request to merge | `bd gate check` (uses `gh pr view`) |
+| `bead` | a bead in another rig to close | currently unresolvable — multi-rig routing was removed, so `bd gate check` reports these gates as uncheckable |
 
-```toml
-[[steps]]
-id = "cooldown"
-title = "Wait for cooldown period"
+Timeouts use Go duration syntax: `30m`, `1h`, `24h` (there is no `d` unit —
+write `24h`, not `1d`).
 
-[steps.gate]
-type = "timer"
-duration = "24h"
-```
+## Gates in formulas
 
-Durations: `30m`, `2h`, `24h`, `7d`
+A formula step declares a gate with a `[steps.gate]` block. When the formula
+is instantiated, bd creates the gate issue and wires it as a blocker of that
+step. The schema has four fields: `type`, `id`, `await_id`, and `timeout`.
 
-### GitHub Gate
-
-Wait for GitHub events:
+This is the release gate from beads' own release formula — the step that
+waits for the GitHub release workflow:
 
 ```toml
 [[steps]]
 id = "wait-for-ci"
-title = "Wait for CI to pass"
+title = "Wait for release workflow"
 
 [steps.gate]
-type = "github"
-event = "check_suite"
-status = "success"
+type = "gh:run"
+id = "release.yml"       # which workflow to watch
+timeout = "30m"          # escalate if it takes longer
 ```
+
+A human sign-off gate:
 
 ```toml
 [[steps]]
-id = "wait-for-merge"
-title = "Wait for PR merge"
-
-[steps.gate]
-type = "github"
-event = "pull_request"
-action = "closed"
-merged = true
-```
-
-## Gate States
-
-| State | Description |
-|-------|-------------|
-| `pending` | Waiting for condition |
-| `open` | Condition met, can proceed |
-| `closed` | Step completed |
-
-## Using Gates in Workflows
-
-### Approval Flow
-
-```toml
-formula = "production-deploy"
-
-[[steps]]
-id = "build"
-title = "Build production artifacts"
-
-[[steps]]
-id = "staging"
-title = "Deploy to staging"
-needs = ["build"]
-
-[[steps]]
-id = "qa-approval"
-title = "QA sign-off"
-needs = ["staging"]
-type = "human"
+id = "approve-deploy"
+title = "Human approves the deploy"
 
 [steps.gate]
 type = "human"
-approvers = ["qa-team"]
-
-[[steps]]
-id = "production"
-title = "Deploy to production"
-needs = ["qa-approval"]
 ```
 
-### Scheduled Release
+And a cooling-off timer:
 
 ```toml
-formula = "scheduled-release"
-
 [[steps]]
-id = "prepare"
-title = "Prepare release"
-
-[[steps]]
-id = "wait-window"
-title = "Wait for release window"
-needs = ["prepare"]
+id = "wait-24h"
+title = "Let the release bake"
 
 [steps.gate]
 type = "timer"
-duration = "2h"
-
-[[steps]]
-id = "deploy"
-title = "Deploy release"
-needs = ["wait-window"]
+timeout = "24h"
 ```
 
-### CI Integration
-
-```toml
-formula = "ci-gated-deploy"
-
-[[steps]]
-id = "create-pr"
-title = "Create pull request"
-
-[[steps]]
-id = "wait-ci"
-title = "Wait for CI"
-needs = ["create-pr"]
-
-[steps.gate]
-type = "github"
-event = "check_suite"
-status = "success"
-
-[[steps]]
-id = "merge"
-title = "Merge PR"
-needs = ["wait-ci"]
-type = "human"
-```
-
-## Gate Operations
-
-### Check Gate Status
+Verify what the parser actually understood before pouring — unknown keys in
+TOML are dropped silently:
 
 ```bash
-bd show bd-xyz.3  # Shows gate state
-bd show bd-xyz.3 --json | jq '.gate'
+bd formula show <formula> --json   # inspect the parsed gate blocks
 ```
 
-### Manual Gate Override
+## Creating gates outside formulas
 
-For human gates:
+`bd gate create` attaches a gate to existing work:
 
 ```bash
-bd gate approve bd-xyz.3 --approver "team-lead"
+# Block bd-abc until a PR merges
+bd gate create --type=gh:pr --blocks bd-abc --await-id=42
+
+# Block bd-abc until a human resolves the gate
+bd gate create --type=human --blocks bd-abc --reason "Design sign-off"
+
+# Add another waiter to an existing gate
+bd gate add-waiter <gate-id> <issue-id>
 ```
 
-### Skip Gate (Emergency)
+## Fan-in: waiting on other steps
 
-```bash
-bd gate skip bd-xyz.3 --reason "Emergency deploy"
-```
-
-## waits-for Dependency
-
-The `waits-for` dependency type creates fan-in patterns:
+Waiting on *other steps* is not a gate — it's a dependency. Use `needs` to
+fan in on named steps, and `waits_for` when a step must wait for
+dynamically-created children:
 
 ```toml
 [[steps]]
-id = "test-a"
-title = "Test suite A"
+id = "merge-results"
+title = "Merge results"
+needs = ["test-a", "test-b"]     # fan-in on named steps
 
 [[steps]]
-id = "test-b"
-title = "Test suite B"
-
-[[steps]]
-id = "integration"
-title = "Integration tests"
-waits_for = ["test-a", "test-b"]  # Fan-in: waits for all
+id = "summarize"
+title = "Summarize all spawned work"
+waits_for = "all-children"       # or "any-children", or "children-of(step-id)"
 ```
 
-## Best Practices
+## Working with gated molecules
 
-1. **Use human gates for critical decisions** - Don't auto-approve production
-2. **Add timeout to timer gates** - Prevent indefinite blocking
-3. **Document gate requirements** - Make approvers clear
-4. **Use CI gates for quality** - Block on test failures
+```bash
+bd ready --gated        # molecules where a gate just closed (ready to resume)
+bd blocked              # what's waiting, and on which gates
+```
+
+Automation patterns: run `bd gate check` on a schedule (cron, CI, or an
+orchestrator loop) so timer and GitHub gates close without a human in the
+loop; keep `human` gates for the decisions that should never auto-close.
