@@ -182,6 +182,9 @@ func spliceCLINav(docsJSONPath string, pages []string) error {
 	var b strings.Builder
 	b.WriteString("[\n")
 	for i, p := range pages {
+		// #nosec G705: not a web-output sink — this developer tool writes the
+		// repo's own docs.json; entries are %q-quoted slugs derived from the
+		// staging tree's filenames, which the same pipeline generates.
 		fmt.Fprintf(&b, "%s%q", entryIndent, p)
 		if i < len(pages)-1 {
 			b.WriteString(",")
