@@ -6095,12 +6095,11 @@ bd help [command] [flags]
 **Flags:**
 
 ```
-      --all                   Show help for all commands in a single document
-      --doc string            Generate markdown docs for a single command
-      --docs-root string      Generate repository CLI docs under this root
-      --docs-version string   Also refresh one versioned website CLI reference, e.g. 1.0.5
-  -h, --help                  help for help
-      --list                  List all available commands
+      --all                Show help for all commands in a single document
+      --doc string         Generate markdown docs for a single command
+      --docs-root string   Generate repository CLI docs under this root
+  -h, --help               help for help
+      --list               List all available commands
 ```
 
 ### bd init-safety
